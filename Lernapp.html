@@ -22,7 +22,7 @@
                 max-width: 100% !important;
             }
             .bg-indigo-600,
-            #screen-home > *:not(#printable-log),
+            #screen-home > *:not(#printable-log):not(#printable-session-log),
             #screen-challenge-select,
             #screen-quiz,
             #screen-path,
@@ -32,7 +32,7 @@
             #screen-lockdown {
                 display: none !important;
             }
-            #printable-log {
+            #printable-log, #printable-session-log {
                 display: block !important;
                 visibility: visible !important;
                 position: static !important;
@@ -40,10 +40,10 @@
                 border: none !important;
                 background: white !important;
                 box-shadow: none !important;
-                margin: 0 !important;
+                margin: 10px 0 !important;
                 padding: 0 !important;
             }
-            #printable-log .overflow-y-auto {
+            #printable-log .overflow-y-auto, #printable-session-log .overflow-y-auto {
                 max-height: none !important;
                 overflow: visible !important;
             }
@@ -202,13 +202,39 @@
 
             </div>
 
+            <!-- LERNZEIT-HISTORIE MIT ADMIN-PIN SCHUTZ -->
+            <div id="printable-session-log" class="bg-indigo-50 border-4 border-dashed border-indigo-300 p-4 rounded-3xl text-left shadow-sm mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-indigo-900 text-sm">⏱️ Lernzeit-Protokoll (Heute)</h3>
+                    <button onclick="clearSessionLogs()" title="Lernzeit-Historie löschen (PIN)" class="no-print bg-white hover:bg-red-50 text-red-600 border border-indigo-300 p-1.5 rounded-lg text-xs transition">
+                        🗑️
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl border border-indigo-200 overflow-hidden max-h-40 overflow-y-auto">
+                    <table class="w-full text-xs text-left text-gray-700">
+                        <thead class="bg-indigo-100 text-indigo-900 font-bold border-b border-indigo-200">
+                            <tr>
+                                <th class="p-2">Startzeit</th>
+                                <th class="p-2">Dauer</th>
+                                <th class="p-2">Ergebnis / Entscheidung</th>
+                            </tr>
+                        </thead>
+                        <tbody id="session-log-table-body">
+                            <tr>
+                                <td colspan="3" class="p-3 text-center text-gray-400">Noch keine Lernzeit gestartet heute.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Lern-Zettel (Protokoll ohne Kalender) -->
             <div id="printable-log" class="bg-amber-50 border-4 border-dashed border-amber-300 p-4 rounded-3xl text-left shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold text-amber-900 text-sm">📋 Lern-Protokoll (Heute)</h3>
+                    <h3 class="font-bold text-amber-900 text-sm">📋 Aufgaben-Protokoll (Heute)</h3>
                     <div class="flex items-center gap-2">
-                        <!-- Mülleimer-Symbol zum Löschen -->
-                        <button onclick="clearAllLogs()" title="Notizen löschen" class="no-print bg-white hover:bg-red-50 text-red-600 border border-amber-300 p-1.5 rounded-lg text-xs transition">
+                        <!-- Mülleimer-Symbol zum Löschen (Mit PIN) -->
+                        <button onclick="clearAllLogs()" title="Notizen löschen (PIN)" class="no-print bg-white hover:bg-red-50 text-red-600 border border-amber-300 p-1.5 rounded-lg text-xs transition">
                             🗑️
                         </button>
                         <!-- Drucken-Button -->
@@ -424,7 +450,7 @@
                 <button onclick="continueUntilTarget()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">
                     🔄 Erneut versuchen (Weiterspielen bis 16 Richtige)
                 </button>
-                <button onclick="choosePenaltyBan()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">
+                <button onclick="choosePenaltyBan()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition text-sm">
                     🚫 20 Uhr Handy- und PC-Verbot
                 </button>
             </div>
@@ -868,7 +894,8 @@
         let challengeErrorsCount = 0;
         let challengeCorrectCount = 0;
         let challengeJokersLeft = 3;
-        let isJokerActive = false; // Schutz-Sperre für den Joker-Klick
+        let isJokerActive = false;
+        let isPromptActive = false;
 
         let defaultRewards = [
             { cost: 300, text: "2 €" },
@@ -957,19 +984,19 @@
             shuffledRallySteps.sort(() => Math.random() - 0.5);
 
             initLogTable();
+            initSessionLogTable();
             updateChallengeMenuDisplay();
             updateHorseshoeDisplay();
             renderRewardsListDisplay();
 
-            // Schummelschutz aktiv für Challenge und andere Spielmodi
             document.addEventListener("visibilitychange", function() {
-                if (document.hidden && !isJokerActive) {
+                if (document.hidden && !isJokerActive && !isPromptActive) {
                     triggerCheatPenalty();
                 }
             });
 
             window.addEventListener("blur", function() {
-                if (!isJokerActive && (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally' || isSessionActive || isTestModeActive)) {
+                if (!isJokerActive && !isPromptActive && (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally' || isSessionActive || isTestModeActive)) {
                     triggerCheatPenalty();
                 }
             });
@@ -1145,6 +1172,7 @@
                 if (isSessionActive) {
                     isSessionActive = false;
                     if (globalTimerInterval) clearInterval(globalTimerInterval);
+                    appendSessionLog("Abgebrochen / Schummeln", "Verlassen der App");
                 }
                 showScreen('screen-home');
             }
@@ -1314,7 +1342,6 @@
                 return;
             }
             
-            // Schummelschutz für den Bruchteil einer Sekunde kurz pausieren, damit der Klick keinen Fehlalarm auslöst
             isJokerActive = true;
             setTimeout(() => { isJokerActive = false; }, 800);
 
@@ -1400,9 +1427,77 @@
             return d.toLocaleDateString('de-DE');
         }
 
+        function getFormattedDateTime() {
+            const d = new Date();
+            const dateStr = d.toLocaleDateString('de-DE');
+            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return `${dateStr}, ${timeStr} Uhr`;
+        }
+
         function getFormattedTime() {
             const d = new Date();
             return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function appendSessionLog(durationText, statusText) {
+            let logs = JSON.parse(localStorage.getItem('session_logs') || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (!logs[today]) {
+                logs[today] = [];
+            }
+            
+            logs[today].push({
+                dateTime: getFormattedDateTime(),
+                duration: durationText,
+                status: statusText
+            });
+
+            localStorage.setItem('session_logs', JSON.stringify(logs));
+            renderSessionLogTable();
+        }
+
+        function initSessionLogTable() {
+            renderSessionLogTable();
+        }
+
+        function clearSessionLogs() {
+            let pin = prompt("Bitte Admin-PIN eingeben zum Löschen des Lernzeit-Protokolls:");
+            if (!checkPinWithLockdown(pin, "0307")) return;
+
+            let logs = JSON.parse(localStorage.getItem('session_logs') || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            if (logs[today]) {
+                logs[today] = [];
+                localStorage.setItem('session_logs', JSON.stringify(logs));
+            }
+            renderSessionLogTable();
+            alert("Lernzeit-Protokoll wurde gelöscht!");
+        }
+
+        function renderSessionLogTable() {
+            let logs = JSON.parse(localStorage.getItem('session_logs') || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            const tbody = document.getElementById('session-log-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const dayLogs = logs[today];
+            if (!dayLogs || dayLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-gray-400">Noch keine Lernzeit gestartet heute.</td></tr>`;
+                return;
+            }
+
+            dayLogs.forEach(item => {
+                let tr = document.createElement('tr');
+                tr.className = "border-b border-indigo-100 hover:bg-indigo-50/50";
+                tr.innerHTML = `
+                    <td class="p-2 font-medium text-gray-800">${item.dateTime}</td>
+                    <td class="p-2 text-gray-600">${item.duration}</td>
+                    <td class="p-2 font-bold text-indigo-900">${item.status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function appendToLiveLog(question, solution, isCorrect) {
@@ -1429,17 +1524,18 @@
         }
 
         function clearAllLogs() {
-            if (confirm("Möchtest du wirklich alle heutigen Notizen löschen?")) {
-                let logs = JSON.parse(localStorage.getItem('learning_logs') || '{}');
-                const today = new Date().toISOString().split('T')[0];
-                if (logs[today]) {
-                    logs[today].tasks = [];
-                    logs[today].time = "-";
-                    localStorage.setItem('learning_logs', JSON.stringify(logs));
-                }
-                renderLogTable();
-                alert("Heutige Notizen wurden gelöscht!");
+            let pin = prompt("Bitte Admin-PIN eingeben zum Löschen des Aufgaben-Protokolls:");
+            if (!checkPinWithLockdown(pin, "0307")) return;
+
+            let logs = JSON.parse(localStorage.getItem('learning_logs') || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            if (logs[today]) {
+                logs[today].tasks = [];
+                logs[today].time = "-";
+                localStorage.setItem('learning_logs', JSON.stringify(logs));
             }
+            renderLogTable();
+            alert("Aufgaben-Protokoll wurde gelöscht!");
         }
 
         function printLog() {
@@ -1547,6 +1643,7 @@
 
             if (screenId === 'screen-home') {
                 initLogTable();
+                initSessionLogTable();
                 updateChallengeMenuDisplay();
                 updateHorseshoeDisplay();
             }
@@ -1554,6 +1651,9 @@
         }
 
         function startCustomSession() {
+            isPromptActive = true;
+            setTimeout(() => { isPromptActive = false; }, 1000);
+
             let choice = prompt("Wähle deine Lernzeit:\n1) Tippe eine Zahl von 10 bis 60 für reguläre Minuten\n2) Tippe '1' für den 1-Minuten-Test!", "20");
             if (choice === null) return;
 
@@ -1587,6 +1687,7 @@
                 totalCorrect: 0
             };
 
+            appendSessionLog("1 Min (Test)", "Gestartet");
             document.getElementById('session-status').innerHTML = `🧪 Test-Lernzeit läuft: <span class="font-bold text-red-600">1 Minute</span>`;
             
             const homeTimer = document.getElementById('home-timer-display');
@@ -1631,6 +1732,7 @@
                 totalCorrect: 0
             };
 
+            appendSessionLog(`${minutes} Min`, "Gestartet");
             document.getElementById('session-status').innerHTML = `✅ Lernzeit läuft: <span class="font-bold text-green-600">${minutes} Minuten</span>`;
             
             const homeTimer = document.getElementById('home-timer-display');
@@ -1693,11 +1795,13 @@
                 localStorage.setItem('total_horseshoes', totalHorseshoes);
                 updateHorseshoeDisplay();
 
+                appendSessionLog(`${sessionStats.minutes} Min`, "Ziel erreicht (16+ Richtige) +3 🧲");
                 document.getElementById('result-title').innerText = "🎉 Glückwunsch! Lernzeit für heute erledigt";
                 badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-green-100 text-green-800 border border-green-300";
                 badge.innerText = "🎯 Ziel erreicht (+3 🧲 Hufeisen Bonus)!";
                 actionsEl.classList.add('hidden');
             } else {
+                appendSessionLog(`${sessionStats.minutes} Min`, `Abgelaufen (${correctCount}/16 Richtige) - Ausstehend`);
                 document.getElementById('result-title').innerText = "⏰ Lernzeit abgelaufen!";
                 badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-red-100 text-red-800 border border-red-300";
                 badge.innerText = "💪 Ziel nicht erreicht";
@@ -1714,6 +1818,8 @@
             document.getElementById('not-reached-actions').classList.add('hidden');
             document.getElementById('penalty-notice').classList.remove('hidden');
             
+            appendSessionLog(`${sessionStats.minutes} Min`, "Entscheidung: 20 Uhr Handy- und PC-Verbot");
+
             const badge = document.getElementById('res-status-badge');
             badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-red-600 text-white";
             badge.innerText = "🚫 20 Uhr Verbot gewählt";
