@@ -101,6 +101,32 @@
         <!-- Startbildschirm / Hauptmenü -->
         <div id="screen-home" class="p-6 text-center">
             
+            <!-- BACKUP-MENÜ MIT WHATSAPP-BUTTON -->
+            <div class="mb-6 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 text-left shadow-sm">
+                <button onclick="toggleBackupMenu()" class="w-full flex justify-between items-center font-bold text-amber-900 text-sm focus:outline-none">
+                    <span class="flex items-center gap-1.5"><span>💾</span> <span>Backup & WhatsApp-Sicherung</span></span>
+                    <span id="backup-toggle-icon" class="text-lg">▼</span>
+                </button>
+                <div id="backup-content" class="hidden mt-3 pt-3 border-t border-amber-200 space-y-3">
+                    <p class="text-[11px] text-amber-800">Sichere deinen aktuellen Spielstand oder stelle ihn per Code wieder her:</p>
+                    <textarea id="backup-code-input" rows="3" class="w-full p-2 text-xs border border-amber-300 rounded-xl font-mono focus:outline-none focus:border-amber-600 bg-white" placeholder="Code hier einfügen..."></textarea>
+                    
+                    <div class="space-y-2">
+                        <div class="flex gap-2">
+                            <button onclick="generateBackupCode()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-2 rounded-xl text-xs transition shadow text-center">
+                                📤 Code kopieren
+                            </button>
+                            <button onclick="sendBackupWhatsApp()" class="w-1/2 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-2 rounded-xl text-xs transition shadow flex items-center justify-center gap-1">
+                                <span>💬</span> <span>Per WhatsApp</span>
+                            </button>
+                        </div>
+                        <button onclick="loadBackupCode()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow">
+                            📥 Daten Laden / Wiederherstellen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Lernzeit-Startbuttons mit Live-Timer -->
             <div class="mb-6 bg-indigo-50 p-4 rounded-2xl border-2 border-indigo-200 shadow-sm">
                 <div class="flex justify-between items-center mb-2">
@@ -954,6 +980,84 @@
                 alert("Prämien-Shop erfolgreich aktualisiert!");
             } else {
                 alert("Ungültige Hufeisen-Anzahl!");
+            }
+        }
+
+        /* BACKUP FUNKTIONEN MIT WHATSAPP */
+        function toggleBackupMenu() {
+            const content = document.getElementById('backup-content');
+            const icon = document.getElementById('backup-toggle-icon');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.innerText = "▲";
+            } else {
+                content.classList.add('hidden');
+                icon.innerText = "▼";
+            }
+        }
+
+        function getBackupJSONString() {
+            let backupData = {
+                total_horseshoes: localStorage.getItem('total_horseshoes'),
+                horse_completed_level: localStorage.getItem('horse_completed_level'),
+                rally_checkpoint_index: localStorage.getItem('rally_checkpoint_index'),
+                challenge_progress: localStorage.getItem('challenge_progress'),
+                challenge_saved_state: localStorage.getItem('challenge_saved_state'),
+                learning_logs: localStorage.getItem('learning_logs'),
+                session_logs: localStorage.getItem('session_logs'),
+                custom_rewards_list: localStorage.getItem('custom_rewards_list')
+            };
+            return btoa(encodeURIComponent(JSON.stringify(backupData)));
+        }
+
+        function generateBackupCode() {
+            let encodedCode = getBackupJSONString();
+            let textarea = document.getElementById('backup-code-input');
+            textarea.value = encodedCode;
+            textarea.select();
+            
+            try {
+                navigator.clipboard.writeText(encodedCode);
+                alert("Backup-Code erfolgreich in die Zwischenablage kopiert!");
+            } catch (e) {
+                alert("Backup-Code erstellt! Bitte aus dem Textfeld kopieren.");
+            }
+        }
+
+        function sendBackupWhatsApp() {
+            let encodedCode = getBackupJSONString();
+            document.getElementById('backup-code-input').value = encodedCode;
+            let message = encodeURIComponent("🚀 Mein Schulexpress Backup-Code:\n\n" + encodedCode);
+            window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
+        }
+
+        function loadBackupCode() {
+            let pin = prompt("Bitte Admin-PIN eingeben zum Wiederherstellen des Backups:");
+            if (!checkPinWithLockdown(pin, "0307")) return;
+
+            let code = document.getElementById('backup-code-input').value.trim();
+            if (!code) {
+                alert("Bitte füge zuerst einen gültigen Backup-Code ein!");
+                return;
+            }
+
+            try {
+                let jsonStr = decodeURIComponent(atob(code));
+                let backupData = JSON.parse(jsonStr);
+
+                if (backupData.total_horseshoes !== undefined) localStorage.setItem('total_horseshoes', backupData.total_horseshoes);
+                if (backupData.horse_completed_level !== undefined) localStorage.setItem('horse_completed_level', backupData.horse_completed_level);
+                if (backupData.rally_checkpoint_index !== undefined) localStorage.setItem('rally_checkpoint_index', backupData.rally_checkpoint_index);
+                if (backupData.challenge_progress !== undefined) localStorage.setItem('challenge_progress', backupData.challenge_progress);
+                if (backupData.challenge_saved_state !== undefined) localStorage.setItem('challenge_saved_state', backupData.challenge_saved_state);
+                if (backupData.learning_logs !== undefined) localStorage.setItem('learning_logs', backupData.learning_logs);
+                if (backupData.session_logs !== undefined) localStorage.setItem('session_logs', backupData.session_logs);
+                if (backupData.custom_rewards_list !== undefined) localStorage.setItem('custom_rewards_list', backupData.custom_rewards_list);
+
+                alert("Stand erfolgreich wiederhergestellt! Die App wird aktualisiert.");
+                location.reload();
+            } catch (e) {
+                alert("Fehler beim Laden des Backup-Codes! Der Code ist ungültig.");
             }
         }
 
