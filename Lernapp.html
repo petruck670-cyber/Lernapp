@@ -601,7 +601,7 @@
                 { question: "Welches Wort wird mit 'ie' geschrieben?", options: ["Flage", "Wiese", "Spal", "Bane"], correct: 1, hint: "Ein langes i in Wiese." },
                 { question: "Was ist das Gegenteil von 'hell'?", options: ["Dunkel", "Leise", "Weich", "Kalt"], correct: 0, hint: "Wenn kein Licht da ist." },
                 { question: "Was ist ein anderes Wort für 'Nomen'?", options: ["Tunwort", "Wiewort", "Namenwort", "Bindewort"], correct: 2, hint: "Namen von Personen, Tieren oder Sachen." },
-                { question: "Welcher Satz ist ein Fragesatz?", options: ["Du kommst morgen.", "Kommst du morgen?", "Komm morgen!", "Ich hoffe du kommst."], correct: 1, hint: "Endet mit einem Fragezeichen." },
+                { question: "Welcher Satz ist Fragesatz?", options: ["Du kommst morgen.", "Kommst du morgen?", "Komm morgen!", "Ich hoffe du kommst."], correct: 1, hint: "Endet mit einem Fragezeichen." },
                 { question: "Wie nennt man die Höhepunkteigenschaft einer Erlebniserzählung?", options: ["Einleitung", "Spannung", "Hauptteil", "Schluss"], correct: 1, hint: "Der spannendste Moment." },
                 { question: "Wie lautet der Fachbegriff für ein Tunwort?", options: ["Nomen", "Verb", "Adjektiv", "Pronomen"], correct: 1, hint: "Was man tun kann." },
                 { question: "Welches der folgenden Wörter ist ein Nomen und wird großgeschrieben?", options: ["Freundschaft", "freundlich", "fahren", "frisch"], correct: 0, hint: "Man kann 'die' davor setzen." },
@@ -668,7 +668,7 @@
                 { question: "Welches dieser Tiere ist ein Säugetier?", options: ["Wal", "Haifisch", "Adler", "Krokodil"], correct: 0, hint: "Lebt im Wasser, atmet aber Luft." },
                 { question: "Welcher Planet steht der Sonne am nächsten?", options: ["Erde", "Mars", "Merkur", "Venus"], correct: 2, hint: "Der heißeste innere Planet." },
                 { question: "Wozu dient eine Kompassnadel?", options: ["Zeigt nach Süden", "Zeigt nach Norden", "Zeigt die Uhrzeit", "Zeigt das Wetter"], correct: 1, hint: "Weist zum Magnetpol." },
-                { question: "Was benötigt ein Feuer, um brennen zu können?", options: ["Sauerstoff, Brennstoff, Wärme", "Wasser, Holz, Luft", "Schatten, Wind, Holz", "Erde, Licht, Wasser"], correct: 0, hint: "Das Verbrennungsdreieck." },
+                { question: "Was benötigt ein Feuer, um brennen zu können?", options: ["Sauerstoff, Brennstoff, Wärme", "Wasser, Holz, Luft", "S Schatten, Wind, Holz", "Erde, Licht, Wasser"], correct: 0, hint: "Das Verbrennungsdreieck." },
                 { question: "Wie nennt man Tiere, die sich nur von Pflanzen ernähren?", options: ["Fleischfresser", "Pflanzenfresser", "Allesfresser", "Aasfresser"], correct: 1, hint: "Essen Gras und Blätter." },
                 { question: "Bei welcher Temperatur gefriert Wasser zu Eis?", options: ["10°C", "0°C", "-10°C", "5°C"], correct: 1, hint: "Der Nullpunkt." },
                 { question: "Wie heißt unser Planetensystem?", options: ["Milchstraße", "Sonnensystem", "Galaxie", "Universum"], correct: 1, hint: "Benannt nach unserem Stern." },
@@ -923,6 +923,9 @@
         let isJokerActive = false;
         let isPromptActive = false;
 
+        let isAppPausedForCall = false;
+        let callPauseStartTime = null;
+
         let defaultRewards = [
             { cost: 300, text: "2 €" },
             { cost: 500, text: "7 Tage ohne Lernzeit 🛌" },
@@ -1093,15 +1096,38 @@
             updateHorseshoeDisplay();
             renderRewardsListDisplay();
 
+            // Korrigierter Schummelschutz & Anruf-Pausierung (gegen verfrühte Fokus-Freigaben)
             document.addEventListener("visibilitychange", function() {
                 if (document.hidden && !isJokerActive && !isPromptActive) {
-                    triggerCheatPenalty();
+                    if (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally') {
+                        triggerCheatPenalty();
+                    } else if (isSessionActive && !isAppPausedForCall) {
+                        isAppPausedForCall = true;
+                        callPauseStartTime = getFormattedDateTime();
+                    }
+                } else if (!document.hidden && isAppPausedForCall) {
+                    isAppPausedForCall = false;
+                    let pauseEndTime = getFormattedDateTime();
+                    appendSessionLog("Pause / Unterbrechung", `Pausiert von ${callPauseStartTime} bis ${pauseEndTime}`);
                 }
             });
 
             window.addEventListener("blur", function() {
-                if (!isJokerActive && !isPromptActive && (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally' || isSessionActive || isTestModeActive)) {
+                if (isJokerActive || isPromptActive) return;
+
+                if (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally') {
                     triggerCheatPenalty();
+                } else if (isSessionActive && !isAppPausedForCall) {
+                    isAppPausedForCall = true;
+                    callPauseStartTime = getFormattedDateTime();
+                }
+            });
+
+            window.addEventListener("focus", function() {
+                if (isAppPausedForCall && !document.hidden) {
+                    isAppPausedForCall = false;
+                    let pauseEndTime = getFormattedDateTime();
+                    appendSessionLog("Pause / Unterbrechung", `Pausiert von ${callPauseStartTime} bis ${pauseEndTime}`);
                 }
             });
         };
@@ -1271,13 +1297,8 @@
                 alert("⚠️ Achtung! Das Verlassen der App oder Öffnen von Overlays/Assistenten gilt als abgebrochenes Level (24 Std. Sperre).");
                 challengeErrorsCount = 99;
                 handleChallengeFinish(false);
-            } else {
-                alert("⚠️ Schummeln erkannt! Das Verlassen der App hat den aktuellen Modus abgebrochen.");
-                if (isSessionActive) {
-                    isSessionActive = false;
-                    if (globalTimerInterval) clearInterval(globalTimerInterval);
-                    appendSessionLog("Abgebrochen / Schummeln", "Verlassen der App");
-                }
+            } else if (currentGameKey === 'horse' || currentGameKey === 'rally') {
+                alert("⚠️ Schummeln erkannt! Das Verlassen der App hat das aktuelle Spiel abgebrochen.");
                 showScreen('screen-home');
             }
         }
@@ -1849,6 +1870,7 @@
 
         function updateGlobalTimer() {
             if (!isSessionActive || globalTimeLeft <= 0) return;
+            if (isAppPausedForCall) return; // Stoppt den Timer komplett während des Anrufs
 
             checkInactivity();
             if (isPausedByInactivity) return;
