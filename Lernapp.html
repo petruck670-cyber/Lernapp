@@ -75,6 +75,92 @@
             }
         }
     </style>
+
+    <!-- Firebase SDKs einbinden -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGu3VqshTh85dH-fsU7FDnJtklV46k5A",
+            authDomain: "wochenplan-f3735.firebaseapp.com",
+            projectId: "wochenplan-f3735",
+            storageBucket: "wochenplan-f3735.appspot.com",
+            messagingSenderId: "862358870805",
+            appId: "1:862358870805:web:efeef5d4bf07111a5ffcfb",
+            measurementId: "G-31QQ9XHZL3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "apps", "schulexpress");
+
+        let isUpdatingFromRemote = false;
+
+        window.loadDataFromCloud = async function() {
+            try {
+                let snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    isUpdatingFromRemote = true;
+                    let cloudData = snap.data();
+                    if (cloudData.total_horseshoes !== undefined) localStorage.setItem('total_horseshoes', cloudData.total_horseshoes);
+                    if (cloudData.horse_completed_level !== undefined) localStorage.setItem('horse_completed_level', cloudData.horse_completed_level);
+                    if (cloudData.rally_checkpoint_index !== undefined) localStorage.setItem('rally_checkpoint_index', cloudData.rally_checkpoint_index);
+                    if (cloudData.learning_logs) localStorage.setItem('learning_logs', JSON.stringify(cloudData.learning_logs));
+                    if (cloudData.session_logs) localStorage.setItem('session_logs', JSON.stringify(cloudData.session_logs));
+                    
+                    if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
+                    if (typeof initLogTable === 'function') initLogTable();
+                    if (typeof initSessionLogTable === 'function') initSessionLogTable();
+                    isUpdatingFromRemote = false;
+                }
+            } catch (e) {
+                console.log("Ladefehler aus Cloud", e);
+            }
+        };
+
+        window.syncToCloud = async function() {
+            if (isUpdatingFromRemote) return;
+            let statusEl = document.getElementById('syncStatus');
+            if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
+
+            try {
+                let cloudPayload = {
+                    total_horseshoes: localStorage.getItem('total_horseshoes') || '0',
+                    horse_completed_level: localStorage.getItem('horse_completed_level') || '0',
+                    rally_checkpoint_index: localStorage.getItem('rally_checkpoint_index') || '0',
+                    learning_logs: JSON.parse(localStorage.getItem('learning_logs') || '{}'),
+                    session_logs: JSON.parse(localStorage.getItem('session_logs') || '{}')
+                };
+                await setDoc(docRef, cloudPayload);
+                if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
+            } catch (e) {
+                if (statusEl) statusEl.innerText = "❌ Fehler beim Speichern zur Cloud";
+            }
+        };
+
+        // Echtzeit Live-Sync
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                let remoteData = docSnap.data();
+                isUpdatingFromRemote = true;
+                if (remoteData.total_horseshoes !== undefined) localStorage.setItem('total_horseshoes', remoteData.total_horseshoes);
+                if (remoteData.horse_completed_level !== undefined) localStorage.setItem('horse_completed_level', remoteData.horse_completed_level);
+                if (remoteData.rally_checkpoint_index !== undefined) localStorage.setItem('rally_checkpoint_index', remoteData.rally_checkpoint_index);
+                if (remoteData.learning_logs) localStorage.setItem('learning_logs', JSON.stringify(remoteData.learning_logs));
+                if (remoteData.session_logs) localStorage.setItem('session_logs', JSON.stringify(remoteData.session_logs));
+
+                if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
+                if (typeof initLogTable === 'function') initLogTable();
+                if (typeof initSessionLogTable === 'function') initSessionLogTable();
+                isUpdatingFromRemote = false;
+            }
+        });
+
+        window.initFirebaseApp = function() {
+            loadDataFromCloud();
+        };
+    </script>
 </head>
 <body class="bg-indigo-50 font-sans min-h-screen flex flex-col items-center justify-center p-4">
 
@@ -84,6 +170,7 @@
         <!-- Header -->
         <div class="bg-indigo-600 p-6 text-white text-center rounded-b-3xl shadow-md relative z-10">
             <h1 class="text-3xl font-extrabold tracking-wide">🚀 Schulexpress</h1>
+            <div id="syncStatus" class="text-xs text-indigo-200 mt-1 font-semibold">⚡ Firebase Live-Sync aktiv</div>
         </div>
 
         <!-- STRAF- SPERRBILDSCHIRM (Lockdown) -->
@@ -1058,6 +1145,7 @@
                 if (backupData.custom_rewards_list !== undefined) localStorage.setItem('custom_rewards_list', backupData.custom_rewards_list);
 
                 alert("Stand erfolgreich wiederhergestellt! Die App wird aktualisiert.");
+                syncToCloud();
                 location.reload();
             } catch (e) {
                 alert("Fehler beim Laden des Backup-Codes! Der Code ist ungültig.");
@@ -1065,6 +1153,8 @@
         }
 
         window.onload = function() {
+            window.initFirebaseApp();
+
             if (localStorage.getItem('app_lockdown') === 'true') {
                 showLockdownScreen();
                 return;
@@ -1235,6 +1325,7 @@
             localStorage.setItem('total_horseshoes', totalHorseshoes);
             localStorage.setItem('last_redeem_month', currentMonth);
             updateHorseshoeDisplay();
+            syncToCloud();
             alert(`Erfolgreich ${amount} Hufeisen eingelöst! Restguthaben: ${totalHorseshoes} Hufeisen.`);
         }
 
@@ -1254,6 +1345,7 @@
             totalHorseshoes = Math.max(0, totalHorseshoes - amount);
             localStorage.setItem('total_horseshoes', totalHorseshoes);
             updateHorseshoeDisplay();
+            syncToCloud();
             alert(`Es wurden ${amount} Hufeisen abgezogen. Neues Guthaben: ${totalHorseshoes} Hufeisen.`);
         }
 
@@ -1265,6 +1357,7 @@
             localStorage.setItem('rally_checkpoint_index', 0);
             shuffledRallySteps = [...rallyStepsData];
             shuffledRallySteps.sort(() => Math.random() - 0.5);
+            syncToCloud();
             alert("Mathe-Rallye wurde auf Aufgabe 1 zurückgesetzt!");
         }
 
@@ -1275,6 +1368,7 @@
             localStorage.removeItem('challenge_progress');
             localStorage.removeItem('challenge_saved_state');
             updateChallengeMenuDisplay();
+            syncToCloud();
             alert("Wochen-Challenge wurde erfolgreich auf Level 1 zurückgesetzt!");
             openChallengeLevelSelect();
         }
@@ -1286,6 +1380,7 @@
             if (confirm("Möchtest du wirklich alle Urkunden (und das Pferde-Rennen) zurücksetzen?")) {
                 localStorage.removeItem('horse_completed_level');
                 currentHorseLevel = 0;
+                syncToCloud();
                 alert("Alle Urkunden wurden gelöscht!");
                 openCertificateBox();
             }
@@ -1523,6 +1618,7 @@
                 prog.lockedLevels[currentChallengeLevel] = Date.now() + (24 * 60 * 60 * 1000);
             }
             localStorage.setItem('challenge_progress', JSON.stringify(prog));
+            syncToCloud();
 
             showScreen('screen-result');
             document.getElementById('btn-print-certificate').classList.add('hidden');
@@ -1579,6 +1675,7 @@
             });
 
             localStorage.setItem('session_logs', JSON.stringify(logs));
+            syncToCloud();
             renderSessionLogTable();
         }
 
@@ -1596,6 +1693,7 @@
                 logs[today] = [];
                 localStorage.setItem('session_logs', JSON.stringify(logs));
             }
+            syncToCloud();
             renderSessionLogTable();
             alert("Lernzeit-Protokoll wurde gelöscht!");
         }
@@ -1641,6 +1739,7 @@
 
             logs[today].time = getFormattedTime();
             localStorage.setItem('learning_logs', JSON.stringify(logs));
+            syncToCloud();
             renderLogTable();
         }
 
@@ -1659,6 +1758,7 @@
                 logs[today].time = "-";
                 localStorage.setItem('learning_logs', JSON.stringify(logs));
             }
+            syncToCloud();
             renderLogTable();
             alert("Aufgaben-Protokoll wurde gelöscht!");
         }
@@ -1742,6 +1842,7 @@
             if (confirm("Möchtest du das Pferderennen wirklich auf Level 1 zurücksetzen?")) {
                 localStorage.removeItem('horse_completed_level');
                 currentHorseLevel = 0;
+                syncToCloud();
                 alert("Erfolgreich auf Level 1 zurückgesetzt!");
             }
         }
@@ -1920,6 +2021,7 @@
                 totalHorseshoes += 3;
                 localStorage.setItem('total_horseshoes', totalHorseshoes);
                 updateHorseshoeDisplay();
+                syncToCloud();
 
                 appendSessionLog(`${sessionStats.minutes} Min`, "Ziel erreicht (16+ Richtige) +3 🧲");
                 document.getElementById('result-title').innerText = "🎉 Glückwunsch! Lernzeit für heute erledigt";
@@ -2341,6 +2443,7 @@
                     if (rallyCurrentIndex % 5 === 0) {
                         localStorage.setItem('rally_checkpoint_index', rallyCurrentIndex);
                     }
+                    syncToCloud();
 
                     if (rallyCurrentIndex < activePathSteps.length) {
                         let bonusMsg = (rallyCurrentIndex === 100) ? " 🎉 FINALE! +1000 Hufeisen!" : ` +${earned} 🧲 Hufeisen!`;
@@ -2360,6 +2463,7 @@
         function showRallyFinished() {
             rallyCurrentIndex = 0;
             localStorage.setItem('rally_checkpoint_index', 0);
+            syncToCloud();
             
             showScreen('screen-result');
             document.getElementById('result-title').innerText = "🏆 Mathe-Rallye Meister!";
@@ -2381,6 +2485,7 @@
                 latestFinishedHorseLevel = currentHorseLevel + 1;
                 currentHorseLevel++;
                 localStorage.setItem('horse_completed_level', currentHorseLevel);
+                syncToCloud();
 
                 showScreen('screen-result');
                 document.getElementById('result-title').innerText = `🎉 Level ${latestFinishedHorseLevel} geschafft!`;
