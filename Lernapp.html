@@ -109,6 +109,7 @@
                     if (cloudData.learning_logs) localStorage.setItem('learning_logs', JSON.stringify(cloudData.learning_logs));
                     if (cloudData.session_logs) localStorage.setItem('session_logs', JSON.stringify(cloudData.session_logs));
                     if (cloudData.custom_rewards_list) localStorage.setItem('custom_rewards_list', JSON.stringify(cloudData.custom_rewards_list));
+                    if (cloudData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(cloudData.horse_level_dates));
                     
                     if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                     if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
@@ -133,7 +134,8 @@
                     rally_checkpoint_index: localStorage.getItem('rally_checkpoint_index') || '0',
                     learning_logs: JSON.parse(localStorage.getItem('learning_logs') || '{}'),
                     session_logs: JSON.parse(localStorage.getItem('session_logs') || '{}'),
-                    custom_rewards_list: JSON.parse(localStorage.getItem('custom_rewards_list') || 'null')
+                    custom_rewards_list: JSON.parse(localStorage.getItem('custom_rewards_list') || 'null'),
+                    horse_level_dates: JSON.parse(localStorage.getItem('horse_level_dates') || '{}')
                 };
                 await setDoc(docRef, cloudPayload);
                 if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
@@ -153,6 +155,7 @@
                 if (remoteData.learning_logs) localStorage.setItem('learning_logs', JSON.stringify(remoteData.learning_logs));
                 if (remoteData.session_logs) localStorage.setItem('session_logs', JSON.stringify(remoteData.session_logs));
                 if (remoteData.custom_rewards_list) localStorage.setItem('custom_rewards_list', JSON.stringify(remoteData.custom_rewards_list));
+                if (remoteData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(remoteData.horse_level_dates));
 
                 if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                 if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
@@ -1072,10 +1075,7 @@
                 rewards[index].text = newText;
                 localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
                 renderRewardsListDisplay();
-                
-                // Hier wurde syncToCloud ergänzt, damit es sich sofort live aktualisiert!
                 syncToCloud();
-
                 alert("Prämien-Shop erfolgreich aktualisiert!");
             } else {
                 alert("Ungültige Hufeisen-Anzahl!");
@@ -1104,7 +1104,8 @@
                 challenge_saved_state: localStorage.getItem('challenge_saved_state'),
                 learning_logs: localStorage.getItem('learning_logs'),
                 session_logs: localStorage.getItem('session_logs'),
-                custom_rewards_list: localStorage.getItem('custom_rewards_list')
+                custom_rewards_list: localStorage.getItem('custom_rewards_list'),
+                horse_level_dates: localStorage.getItem('horse_level_dates')
             };
             return btoa(encodeURIComponent(JSON.stringify(backupData)));
         }
@@ -1152,6 +1153,7 @@
                 if (backupData.learning_logs !== undefined) localStorage.setItem('learning_logs', backupData.learning_logs);
                 if (backupData.session_logs !== undefined) localStorage.setItem('session_logs', backupData.session_logs);
                 if (backupData.custom_rewards_list !== undefined) localStorage.setItem('custom_rewards_list', backupData.custom_rewards_list);
+                if (backupData.horse_level_dates !== undefined) localStorage.setItem('horse_level_dates', backupData.horse_level_dates);
 
                 alert("Stand erfolgreich wiederhergestellt! Die App wird aktualisiert.");
                 syncToCloud();
@@ -1195,7 +1197,6 @@
             updateHorseshoeDisplay();
             renderRewardsListDisplay();
 
-            // Korrigierter Schummelschutz & Anruf-Pausierung (gegen verfrühte Fokus-Freigaben)
             document.addEventListener("visibilitychange", function() {
                 if (document.hidden && !isJokerActive && !isPromptActive) {
                     if (isChallengeMode || currentGameKey === 'horse' || currentGameKey === 'rally') {
@@ -1388,6 +1389,7 @@
 
             if (confirm("Möchtest du wirklich alle Urkunden (und das Pferde-Rennen) zurücksetzen?")) {
                 localStorage.removeItem('horse_completed_level');
+                localStorage.removeItem('horse_level_dates');
                 currentHorseLevel = 0;
                 syncToCloud();
                 alert("Alle Urkunden wurden gelöscht!");
@@ -1781,7 +1783,11 @@
             const iconIndex = (num - 1) % horseIcons.length;
             document.getElementById('cert-horse-icon').innerText = horseIcons[iconIndex];
             document.getElementById('cert-level-display').innerText = `LEVEL ${num} MEISTER`;
-            document.getElementById('cert-date-display').innerText = `Datum: ${getTodayString()}`;
+
+            // Gespeichertes Datum des Erstellens laden
+            let horseDates = JSON.parse(localStorage.getItem('horse_level_dates') || '{}');
+            let certDate = horseDates[num] || getTodayString();
+            document.getElementById('cert-date-display').innerText = `Datum: ${certDate}`;
 
             const sigIndex = (num - 1) % funnySignatures.length;
             document.getElementById('cert-funny-sig').innerText = funnySignatures[sigIndex];
@@ -1850,6 +1856,7 @@
         function resetHorseProgress() {
             if (confirm("Möchtest du das Pferderennen wirklich auf Level 1 zurücksetzen?")) {
                 localStorage.removeItem('horse_completed_level');
+                localStorage.removeItem('horse_level_dates');
                 currentHorseLevel = 0;
                 syncToCloud();
                 alert("Erfolgreich auf Level 1 zurückgesetzt!");
@@ -1980,7 +1987,7 @@
 
         function updateGlobalTimer() {
             if (!isSessionActive || globalTimeLeft <= 0) return;
-            if (isAppPausedForCall) return; // Stoppt den Timer komplett während des Anrufs
+            if (isAppPausedForCall) return;
 
             checkInactivity();
             if (isPausedByInactivity) return;
@@ -2494,6 +2501,14 @@
                 latestFinishedHorseLevel = currentHorseLevel + 1;
                 currentHorseLevel++;
                 localStorage.setItem('horse_completed_level', currentHorseLevel);
+
+                // Das Entstehungsdatum für diese Urkunde dauerhaft speichern
+                let horseDates = JSON.parse(localStorage.getItem('horse_level_dates') || '{}');
+                if (!horseDates[currentHorseLevel]) {
+                    horseDates[currentHorseLevel] = getTodayString();
+                    localStorage.setItem('horse_level_dates', JSON.stringify(horseDates));
+                }
+
                 syncToCloud();
 
                 showScreen('screen-result');
