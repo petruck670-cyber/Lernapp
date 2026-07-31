@@ -1784,7 +1784,7 @@
             document.getElementById('cert-horse-icon').innerText = horseIcons[iconIndex];
             document.getElementById('cert-level-display').innerText = `LEVEL ${num} MEISTER`;
 
-            // Gespeichertes Datum des Erstellens laden
+            // Korrektes, historisches Datum der Urkunde aus dem Speicher laden
             let horseDates = JSON.parse(localStorage.getItem('horse_level_dates') || '{}');
             let certDate = horseDates[num] || getTodayString();
             document.getElementById('cert-date-display').innerText = `Datum: ${certDate}`;
