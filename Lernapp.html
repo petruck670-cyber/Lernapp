@@ -711,7 +711,7 @@
                 { question: "Welcher Buchstabe fehlt in: 'Kat_e'?", options: ["z", "tz", "s", "c"], correct: 0, hint: "Kurzer Selbstlaut vor der Lücke." },
                 { question: "Mit welcher Frage sucht man nach dem Akkusativobjekt?", options: ["Wer oder was?", "Wen oder was?", "Wem?", "Woher?"], correct: 1, hint: "Der Wen-Fall." },
                 { question: "Welches Wort ist ein Pronomen (Fürwort)?", options: ["er", "groß", "Lauf", "schnell"], correct: 0, hint: "Ersetzt ein Nomen." },
-                { question: "Was ist ein Synonym (ähnliches Wort) für 'großartig'?", options: ["toll", "klein", "traurig", "schlecht"], correct: 0, hint: "Etwas, das sehr gut ist." },
+                { question: "Was ist das Synonym (ähnliches Wort) für 'großartig'?", options: ["toll", "klein", "traurig", "schlecht"], correct: 0, hint: "Etwas, das sehr gut ist." },
                 { question: "Wie viele Silben hat das Wort 'Elefant'?", options: ["2", "3", "4", "5"], correct: 1, hint: "E-le-fant." },
                 { question: "Wie lautet die 1. Steigerungsstufe von 'gut'?", options: ["guter", "besser", "am besten", "schöner"], correct: 1, hint: "Vergleichsform." },
                 { question: "Welches Wort schreibt man mit Doppel-s (ss)?", options: ["Schlo__", "Stra__e", "Gro__", "Fren__"], correct: 0, hint: "Nach kurzem Selbstlaut." },
@@ -1031,7 +1031,10 @@
 
         function getRewardsList() {
             let saved = JSON.parse(localStorage.getItem('custom_rewards_list') || 'null');
-            return saved ? saved : defaultRewards;
+            let list = saved ? saved : defaultRewards;
+            // Immer automatisch von niedrig nach hoch sortieren
+            list.sort((a, b) => a.cost - b.cost);
+            return list;
         }
 
         function renderRewardsListDisplay() {
@@ -1051,35 +1054,69 @@
             if (!checkPinWithLockdown(pin, "0307")) return;
 
             let rewards = getRewardsList();
-            let promptText = "Aktuelle Prämien:\n" + rewards.map((r, i) => `${i+1}) ${r.cost} Hufeisen = ${r.text}`).join("\n") + 
-                             "\n\nMöchtest du eine Prämie ändern? Gib die Nummer (1-5) ein oder klicke auf Abbrechen:";
             
-            let indexStr = prompt(promptText, "1");
-            if (indexStr === null) return;
-            let index = parseInt(indexStr) - 1;
+            // Menü-Optionen zusammenbauen
+            let menuText = "Prämien-Shop verwalten:\n\n" + 
+                           rewards.map((r, i) => `${i+1}) ${r.cost} Hufeisen = ${r.text}`).join("\n") + 
+                           `\n\nGib die Nummer einer Prämie ein (1-${rewards.length}) um sie zu bearbeiten/löschen,\noder tippe 'NEU' um eine weitere Prämie hinzuzufügen:`;
 
-            if (isNaN(index) || index < 0 || index >= rewards.length) {
-                alert("Ungültige Nummer!");
+            let actionStr = prompt(menuText, "1");
+            if (actionStr === null) return;
+            actionStr = actionStr.trim().toUpperCase();
+
+            if (actionStr === "NEU") {
+                let costStr = prompt("Hufeisen-Anzahl für die neue Prämie:", "600");
+                if (costStr === null) return;
+                let cost = parseInt(costStr);
+
+                let text = prompt("Beschreibung der neuen Prämie (z.B. Kino-Gutschein 🎟️):", "");
+                if (text === null || text.trim() === "") return;
+
+                if (!isNaN(cost) && cost > 0) {
+                    rewards.push({ cost: cost, text: text.trim() });
+                    rewards.sort((a, b) => a.cost - b.cost); // Sortieren
+                    localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
+                    renderRewardsListDisplay();
+                    syncToCloud();
+                    alert("Neue Prämie erfolgreich hinzugefügt und einsortiert!");
+                } else {
+                    alert("Ungültige Hufeisen-Anzahl!");
+                }
                 return;
             }
 
-            let newCostStr = prompt(`Neue Hufeisen-Anzahl für "${rewards[index].text}":`, rewards[index].cost);
+            let index = parseInt(actionStr) - 1;
+            if (isNaN(index) || index < 0 || index >= rewards.length) {
+                alert("Ungültige Eingabe!");
+                return;
+            }
+
+            let newCostStr = prompt(`Hufeisen für "${rewards[index].text}" (Tippe 0 oder leer lassen zum LÖSCHEN):`, rewards[index].cost);
             if (newCostStr === null) return;
             let newCost = parseInt(newCostStr);
 
-            let newText = prompt(`Neue Beschreibung für ${newCost} Hufeisen:`, rewards[index].text);
+            if (isNaN(newCost) || newCost <= 0) {
+                if (confirm(`Möchtest du die Prämie "${rewards[index].text}" komplett löschen?`)) {
+                    rewards.splice(index, 1);
+                    localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
+                    renderRewardsListDisplay();
+                    syncToCloud();
+                    alert("Prämie erfolgreich gelöscht!");
+                }
+                return;
+            }
+
+            let newText = prompt(`Beschreibung für ${newCost} Hufeisen:`, rewards[index].text);
             if (newText === null) return;
 
-            if (!isNaN(newCost) && newCost > 0) {
-                rewards[index].cost = newCost;
-                rewards[index].text = newText;
-                localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
-                renderRewardsListDisplay();
-                syncToCloud();
-                alert("Prämien-Shop erfolgreich aktualisiert!");
-            } else {
-                alert("Ungültige Hufeisen-Anzahl!");
-            }
+            rewards[index].cost = newCost;
+            rewards[index].text = newText.trim();
+            rewards.sort((a, b) => a.cost - b.cost); // Automatisch nach Hufeisen sortieren
+
+            localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
+            renderRewardsListDisplay();
+            syncToCloud();
+            alert("Prämien-Shop erfolgreich aktualisiert und sortiert!");
         }
 
         /* BACKUP FUNKTIONEN MIT WHATSAPP */
@@ -1784,7 +1821,6 @@
             document.getElementById('cert-horse-icon').innerText = horseIcons[iconIndex];
             document.getElementById('cert-level-display').innerText = `LEVEL ${num} MEISTER`;
 
-            // Korrektes, historisches Datum der Urkunde aus dem Speicher laden
             let horseDates = JSON.parse(localStorage.getItem('horse_level_dates') || '{}');
             let certDate = horseDates[num] || getTodayString();
             document.getElementById('cert-date-display').innerText = `Datum: ${certDate}`;
