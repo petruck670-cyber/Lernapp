@@ -272,7 +272,7 @@
 
                 <!-- Deutsch -->
                 <div class="bg-green-50 p-4 rounded-2xl border-2 border-green-200">
-                    <h3 class="font-bold text-green-800 mb-2 text-base">📚 Deutsch (60+ Fragen)</h3>
+                    <h3 class="font-bold text-green-800 mb-2 text-base">📚 Deutsch (60+ Fragen & Mix)</h3>
                     <div class="space-y-2">
                         <button onclick="openCategory('Deutsch', false)" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl shadow transition text-sm">
                             📚 Alle Fragen lernen
@@ -510,8 +510,8 @@
 
             <div id="direct-input-container" class="space-y-4 hidden">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Trage das Ergebnis selbst ein:</label>
-                    <input type="text" id="quiz-user-input" class="w-full border-2 border-indigo-200 focus:border-indigo-600 p-3 rounded-xl text-center text-xl font-bold outline-none" placeholder="Antwort...">
+                    <label class="block text-xs font-bold text-gray-600 mb-1" id="direct-input-label">Trage das Ergebnis selbst ein:</label>
+                    <input type="text" id="quiz-user-input" name="no-autofill-field" data-lpignore="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full border-2 border-indigo-200 focus:border-indigo-600 p-3 rounded-xl text-center text-xl font-bold outline-none" placeholder="Antwort eintippen...">
                 </div>
                 <button onclick="checkDirectInputAnswer()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition">
                     Antwort prüfen ➔
@@ -540,7 +540,7 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">Trage das Ergebnis ein:</label>
-                    <input type="number" id="path-user-input" class="w-full border-2 border-purple-200 focus:border-purple-600 p-3 rounded-xl text-center text-xl font-bold outline-none" placeholder="Ergebnis...">
+                    <input type="number" id="path-user-input" name="no-autofill-num" data-lpignore="true" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full border-2 border-purple-200 focus:border-purple-600 p-3 rounded-xl text-center text-xl font-bold outline-none" placeholder="Ergebnis...">
                 </div>
                 <button onclick="checkPathStep()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition">
                     Weiter zum nächsten Feld ➔
@@ -690,66 +690,85 @@
                 { question: "Teile 100 durch 5:", options: ["20", "25", "15", "10"], correct: 0, hint: "Wie viel mal passt 5 in 100?" }
             ],
             Deutsch: [
-                { question: "Welche Wortart ist das Wort 'schnell'?", options: ["Nomen", "Verb", "Adjektiv", "Artikel"], correct: 2, hint: "Es beschreibt, wie etwas getan wird (Wiewort)." },
-                { question: "Wie schreibt man die Mehrzahl von 'Fahrrad'?", options: ["Fahrräder", "Fahrrads", "Fahrräders", "Fahrräds"], correct: 0, hint: "Mit Umlaut ä." },
-                { question: "Welcher Satz steht im Präteritum (Vergangenheit)?", options: ["Ich laufe.", "Ich bin gelaufen.", "Ich lief.", "Ich werde laufen."], correct: 2, hint: "Die einfache Vergangenheit." },
-                { question: "Welches Wort wird mit 'ie' geschrieben?", options: ["Flage", "Wiese", "Spal", "Bane"], correct: 1, hint: "Ein langes i in Wiese." },
-                { question: "Was ist das Gegenteil von 'hell'?", options: ["Dunkel", "Leise", "Weich", "Kalt"], correct: 0, hint: "Wenn kein Licht da ist." },
-                { question: "Was ist ein anderes Wort für 'Nomen'?", options: ["Tunwort", "Wiewort", "Namenwort", "Bindewort"], correct: 2, hint: "Namen von Personen, Tieren oder Sachen." },
-                { question: "Welcher Satz ist Fragesatz?", options: ["Du kommst morgen.", "Kommst du morgen?", "Komm morgen!", "Ich hoffe du kommst."], correct: 1, hint: "Endet mit einem Fragezeichen." },
-                { question: "Wie nennt man die Höhepunkteigenschaft einer Erlebniserzählung?", options: ["Einleitung", "Spannung", "Hauptteil", "Schluss"], correct: 1, hint: "Der spannendste Moment." },
-                { question: "Wie lautet der Fachbegriff für ein Tunwort?", options: ["Nomen", "Verb", "Adjektiv", "Pronomen"], correct: 1, hint: "Was man tun kann." },
-                { question: "Welches der folgenden Wörter ist ein Nomen und wird großgeschrieben?", options: ["Freundschaft", "freundlich", "fahren", "frisch"], correct: 0, hint: "Man kann 'die' davor setzen." },
-                { question: "Was bedeutet die Abkürzung 'bzw.'?", options: ["beziehungsweise", "beispielsweise", "beim zweiten", "bezüglich"], correct: 0, hint: "Oder genauer gesagt." },
-                { question: "Welches Wort ist richtig geschrieben?", options: ["Bäkerai", "Bäckerei", "Bekerai", "Bäckerai"], correct: 1, hint: "Kommt von Backen." },
-                { question: "Welcher Satz steht im Futur (Zukunft)?", options: ["Ich lerne.", "Ich lernte.", "Ich habe gelernt.", "Ich werde lernen."], correct: 3, hint: "Verwendet 'werden'." },
-                { question: "Mit welcher Frage sucht man nach dem Subjekt im Satz?", options: ["Wer oder was?", "Wen oder was?", "Wem?", "Wo?"], correct: 0, hint: "Der Wer-Fall." },
-                { question: "Welches Wort ist ein zusammengesetztes Nomen?", options: ["Haustür", "Spielen", "Wunderschön", "Aufstehen"], correct: 0, hint: "Haus + Tür." },
-                { question: "Was ist das Gegenteil von 'laut'?", options: ["ruhig", "leise", "still", "sanft"], correct: 1, hint: "Kaum zu hören." },
-                { question: "Wie lautet die Grundform (Infinitiv) von 'ging'?", options: ["gegangen", "gehen", "geht", "ginge"], correct: 1, hint: "Die Nennform auf -en." },
-                { question: "Welches Satzzeichen steht am Ende eines Ausrufesatzes?", options: ["Punkt", "Fragezeichen", "Ausrufezeichen", "Komma"], correct: 2, hint: "Ein Strich mit Punkt darunter." },
-                { question: "Welcher Buchstabe fehlt in: 'Kat_e'?", options: ["z", "tz", "s", "c"], correct: 0, hint: "Kurzer Selbstlaut vor der Lücke." },
-                { question: "Mit welcher Frage sucht man nach dem Akkusativobjekt?", options: ["Wer oder was?", "Wen oder was?", "Wem?", "Woher?"], correct: 1, hint: "Der Wen-Fall." },
-                { question: "Welches Wort ist ein Pronomen (Fürwort)?", options: ["er", "groß", "Lauf", "schnell"], correct: 0, hint: "Ersetzt ein Nomen." },
-                { question: "Was ist das Synonym (ähnliches Wort) für 'großartig'?", options: ["toll", "klein", "traurig", "schlecht"], correct: 0, hint: "Etwas, das sehr gut ist." },
-                { question: "Wie viele Silben hat das Wort 'Elefant'?", options: ["2", "3", "4", "5"], correct: 1, hint: "E-le-fant." },
-                { question: "Wie lautet die 1. Steigerungsstufe von 'gut'?", options: ["guter", "besser", "am besten", "schöner"], correct: 1, hint: "Vergleichsform." },
-                { question: "Welches Wort schreibt man mit Doppel-s (ss)?", options: ["Schlo__", "Stra__e", "Gro__", "Fren__"], correct: 0, hint: "Nach kurzem Selbstlaut." },
-                { question: "Was gehört zwingend zur wörtlichen Rede?", options: ["Fragezeichen", "Anführungszeichen", "Ausrufezeichen", "Klammern"], correct: 1, hint: "Gänsefüßchen." },
-                { question: "Welches Wort ist eine Konjunktion (Bindewort)?", options: ["weil", "Hund", "rennen", "schön"], correct: 0, hint: "Verbindet Sätze." },
-                { question: "Welches dieser Wörter ist KEIN Adjektiv?", options: ["Laufen", "schnell", "bunt", "klug"], correct: 0, hint: "Das ist ein Verb." },
-                { question: "Wie lautet die Mehrzahl von 'Museum'?", options: ["Museums", "Museen", "Musee", "Museener"], correct: 1, hint: "Unregelmäßige Mehrzahl auf -en." },
-                { question: "Wie lautet die Mehrzahl von 'Satz'?", options: ["Sätze", "Satze", "Satzes", "Sätze"], correct: 0, hint: "Mit Umlaut." },
-                { question: "Welcher Fall (Kasus) ist der 4. Fall?", options: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"], correct: 3, hint: "Wen-Fall." },
-                { question: "Wie schreibt man die Mehrzahl von 'Schiff'?", options: ["Schiffe", "Schiffs", "Schiffes", "Schieff"], correct: 0, hint: "Mit -e am Ende." },
-                { question: "Welcher Buchstabe am Wortende wird weich ausgesprochen (Auslautverhärtung)? Beispiel: Hund -> Hun[t]. Welcher Buchstabe steht dort?", options: ["d", "t", "b", "g"], correct: 0, hint: "Der Buchstabe für den Hund." },
-                { question: "Wie nennt man Wörter, die gleich klingen, aber unterschiedliche Bedeutung haben (z. B. Waise / Weise)?", options: ["Homophone", "Synonyme", "Antonyme", "Nomen"], correct: 0, hint: "Gleicher Klang." },
-                { question: "In welchem Satz ist das Wort 'heute' ein Adverb?", options: ["Heute regnet es.", "Der Tag heute ist schön.", "Heute ist ein Fest.", "Heute ist toll."], correct: 0, hint: "Umstandsbestimmung der Zeit." },
-                { question: "Welches Tier ist ein Nomen?", options: ["Laufen", "Katze", "schön", "und"], correct: 1, hint: "Ein Lebewesen." },
-                { question: "Wie viele Selbstlaute (Vokale) hat das Alphabet?", options: ["3", "5", "7", "8"], correct: 1, hint: "A, E, I, O, U." },
-                { question: "Welches Wort ist ein Verb?", options: ["Baum", "spielen", "blau", "schnell"], correct: 1, hint: "Etwas, das man tun kann." },
-                { question: "Welches Satzzeichen gehört an das Ende eines normalen Aussagesatzes?", options: ["Punkt", "Fragezeichen", "Ausrufezeichen", "Komma"], correct: 0, hint: "Der klassische Punkt." },
-                { question: "Wie nennt man die Mehrzahl eines Wortes noch?", options: ["Singular", "Plural", "Artikel", "Pronomen"], correct: 1, hint: "Mehrzahl-Fachbegriff." },
-                { question: "Was ist die Einzahl eines Wortes?", options: ["Plural", "Singular", "Tempus", "Kasus"], correct: 1, hint: "Einzahl-Fachbegriff." },
-                { question: "Welches Wort ist ein Adjektiv?", options: ["Tisch", "laufen", "groß", "wir"], correct: 2, hint: "Beschreibt eine Eigenschaft." },
-                { question: "Wie schreibt man den Satzanfang?", options: ["immer klein", "immer groß", "egal", "nur bei Nomen groß"], correct: 1, hint: "Erster Buchstabe eines Satzes." },
-                { question: "Welches Wort enthält ein 'ch' nach einem hellen Laut (wie in ich)?", options: ["Buch", "Kuchen", "Licht", "Dach"], correct: 2, hint: "Der ich-Laut." },
-                { question: "Welches Wort enthält einen Umlaut?", options: ["Haus", "Maus", "Häuser", "Hund"], correct: 2, hint: "Enthält ä, ö oder ü." },
-                { question: "Was ist ein Artikel?", options: ["der, die, das", "laufen, gehen", "und, aber", "ich, du, er"], correct: 0, hint: "Begleiter des Nomens." },
-                { question: "Welches Wort ist ein Begleiter?", options: ["eine", "schön", "rennen", "gestern"], correct: 0, hint: "Unbestimmter Artikel." },
-                { question: "Wie schreibt man 'hundert' as Nomen (die Zahl)?", options: ["Hundert", "hundert", "Hunderd", "hunderd"], correct: 0, hint: "Als Nomen großgeschrieben." },
-                { question: "Welches Wort ist richtig getrennt? (Ham-ster)", options: ["Ham-ster", "Ha-mster", "Hams-ter", "Hamst-er"], correct: 0, hint: "Nachsprech-Silben." },
-                { question: "Wie heißt die Vergangenheit von 'gehen'?", options: ["gegangen", "ging", "gehe", "wird gehen"], correct: 1, hint: "Präteritum-Form." },
-                { question: "Welche Zeitform drückt die Zukunft aus?", options: ["Präsens", "Präteritum", "Futur", "Perfekt"], correct: 2, hint: "Mit 'werden'." },
-                { question: "Was ist das Gegenteil von 'groß'?", options: ["klein", "dick", "schwer", "lang"], correct: 0, hint: "Nicht groß." },
-                { question: "Wie nennt man Wörter mit gegensätzlicher Bedeutung?", options: ["Synonyme", "Antonyme", "Homophone", "Nomen"], correct: 1, hint: "Gegenteile." },
-                { question: "Welches Wort ist ein Prädikat im Satz 'Der Hund bellt'?", options: ["Der", "Hund", "bellt", "keines"], correct: 2, hint: "Die Tätigkeit im Satz." },
-                { question: "Welches Wort ist ein Artikel?", options: ["ein", "groß", "Auto", "fahren"], correct: 0, hint: "Ein / eine." },
-                { question: "Wie viele Mitlaute (Konsonanten) hat das deutsche Alphabet ungefähr?", options: ["5", "10", "21", "26"], correct: 2, hint: "Alle außer den 5 Vokalen." },
-                { question: "Welches Wort reimt sich auf 'Haus'?", options: ["Maus", "Hund", "Katze", "Baum"], correct: 0, hint: "Klingt am Ende gleich." },
-                { question: "Wie schreibt man den Namen eines Wochentages?", options: ["immer klein", "immer groß", "wie Nomen groß", "egal"], correct: 2, hint: "Namen von Wochentagen sind Nomen." },
-                { question: "Was ist ein Satzglied?", options: ["Ein einzelner Buchstabe", "Ein Baustein des Satzes", "Ein Komma", "Eine Silbe"], correct: 1, hint: "Kann im Satz verschoben werden." },
-                { question: "Welcher Fall ist der 3. Fall?", options: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"], correct: 2, hint: "Wem-Fall." }
+                { type: "choice", question: "Welche Wortart ist das Wort 'schnell'?", options: ["Nomen", "Verb", "Adjektiv", "Artikel"], correct: 2, hint: "Es beschreibt, wie etwas getan wird (Wiewort)." },
+                { type: "choice", question: "Wie schreibt man die Mehrzahl von 'Fahrrad'?", options: ["Fahrräder", "Fahrrads", "Fahrräders", "Fahrräds"], correct: 0, hint: "Mit Umlaut ä." },
+                { type: "choice", question: "Welcher Satz steht im Präteritum (Vergangenheit)?", options: ["Ich laufe.", "Ich bin gelaufen.", "Ich lief.", "Ich werde laufen."], correct: 2, hint: "Die einfache Vergangenheit." },
+                { type: "choice", question: "Welches Wort wird mit 'ie' geschrieben?", options: ["Flage", "Wiese", "Spal", "Bane"], correct: 1, hint: "Ein langes i in Wiese." },
+                { type: "choice", question: "Was ist das Gegenteil von 'hell'?", options: ["Dunkel", "Leise", "Weich", "Kalt"], correct: 0, hint: "Wenn kein Licht da ist." },
+                { type: "choice", question: "Was ist ein anderes Wort für 'Nomen'?", options: ["Tunwort", "Wiewort", "Namenwort", "Bindewort"], correct: 2, hint: "Namen von Personen, Tieren oder Sachen." },
+                { type: "choice", question: "Welcher Satz ist Fragesatz?", options: ["Du kommst morgen.", "Kommst du morgen?", "Komm morgen!", "Ich hoffe du kommst."], correct: 1, hint: "Endet mit einem Fragezeichen." },
+                { type: "choice", question: "Wie nennt man die Höhepunkteigenschaft einer Erlebniserzählung?", options: ["Einleitung", "Spannung", "Hauptteil", "Schluss"], correct: 1, hint: "Der spannendste Moment." },
+                { type: "choice", question: "Wie lautet der Fachbegriff für ein Tunwort?", options: ["Nomen", "Verb", "Adjektiv", "Pronomen"], correct: 1, hint: "Was man tun kann." },
+                { type: "choice", question: "Welches der folgenden Wörter ist ein Nomen und wird großgeschrieben?", options: ["Freundschaft", "freundlich", "fahren", "frisch"], correct: 0, hint: "Man kann 'die' davor setzen." },
+                { type: "choice", question: "Was bedeutet die Abkürzung 'bzw.'?", options: ["beziehungsweise", "beispielsweise", "beim zweiten", "bezüglich"], correct: 0, hint: "Oder genauer gesagt." },
+                { type: "choice", question: "Welches Wort ist richtig geschrieben?", options: ["Bäkerai", "Bäckerei", "Bekerai", "Bäckerai"], correct: 1, hint: "Kommt von Backen." },
+                { type: "choice", question: "Welcher Satz steht im Futur (Zukunft)?", options: ["Ich lerne.", "Ich lernte.", "Ich habe gelernt.", "Ich werde lernen."], correct: 3, hint: "Verwendet 'werden'." },
+                { type: "choice", question: "Mit welcher Frage sucht man nach dem Subjekt im Satz?", options: ["Wer oder was?", "Wen oder was?", "Wem?", "Wo?"], correct: 0, hint: "Der Wer-Fall." },
+                { type: "choice", question: "Welches Wort ist ein zusammengesetztes Nomen?", options: ["Haustür", "Spielen", "Wunderschön", "Aufstehen"], correct: 0, hint: "Haus + Tür." },
+                { type: "choice", question: "Was ist das Gegenteil von 'laut'?", options: ["ruhig", "leise", "still", "sanft"], correct: 1, hint: "Kaum zu hören." },
+                { type: "choice", question: "Wie lautet die Grundform (Infinitiv) von 'ging'?", options: ["gegangen", "gehen", "geht", "ginge"], correct: 1, hint: "Die Nennform auf -en." },
+                { type: "choice", question: "Welches Satzzeichen steht am Ende eines Ausrufesatzes?", options: ["Punkt", "Fragezeichen", "Ausrufezeichen", "Komma"], correct: 2, hint: "Ein Strich mit Punkt darunter." },
+                { type: "choice", question: "Welcher Buchstabe fehlt in: 'Kat_e'?", options: ["z", "tz", "s", "c"], correct: 0, hint: "Kurzer Selbstlaut vor der Lücke." },
+                { type: "choice", question: "Mit welcher Frage sucht man nach dem Akkusativobjekt?", options: ["Wer oder was?", "Wen oder was?", "Wem?", "Woher?"], correct: 1, hint: "Der Wen-Fall." },
+                { type: "choice", question: "Welches Wort ist ein Pronomen (Fürwort)?", options: ["er", "groß", "Lauf", "schnell"], correct: 0, hint: "Ersetzt ein Nomen." },
+                { type: "choice", question: "Was ist das Synonym (ähnliches Wort) für 'großartig'?", options: ["toll", "klein", "traurig", "schlecht"], correct: 0, hint: "Etwas, das sehr gut ist." },
+                { type: "choice", question: "Wie viele Silben hat das Wort 'Elefant'?", options: ["2", "3", "4", "5"], correct: 1, hint: "E-le-fant." },
+                { type: "choice", question: "Wie lautet die 1. Steigerungsstufe von 'gut'?", options: ["guter", "besser", "am besten", "schöner"], correct: 1, hint: "Vergleichsform." },
+                { type: "choice", question: "Welches Wort schreibt man mit Doppel-s (ss)?", options: ["Schlo__", "Stra__e", "Gro__", "Fren__"], correct: 0, hint: "Nach kurzem Selbstlaut." },
+                { type: "choice", question: "Was gehört zwingend zur wörtlichen Rede?", options: ["Fragezeichen", "Anführungszeichen", "Ausrufezeichen", "Klammern"], correct: 1, hint: "Gänsefüßchen." },
+                { type: "choice", question: "Welches Wort ist eine Konjunktion (Bindewort)?", options: ["weil", "Hund", "rennen", "schön"], correct: 0, hint: "Verbindet Sätze." },
+                { type: "choice", question: "Welches dieser Wörter ist KEIN Adjektiv?", options: ["Laufen", "schnell", "bunt", "klug"], correct: 0, hint: "Das ist ein Verb." },
+                { type: "choice", question: "Wie lautet die Mehrzahl von 'Museum'?", options: ["Museums", "Museen", "Musee", "Museener"], correct: 1, hint: "Unregelmäßige Mehrzahl auf -en." },
+                { type: "choice", question: "Wie lautet die Mehrzahl von 'Satz'?", options: ["Sätze", "Satze", "Satzes", "Sätze"], correct: 0, hint: "Mit Umlaut." },
+                { type: "choice", question: "Welcher Fall (Kasus) ist der 4. Fall?", options: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"], correct: 3, hint: "Wen-Fall." },
+                { type: "choice", question: "Wie schreibt man die Mehrzahl von 'Schiff'?", options: ["Schiffe", "Schiffs", "Schiffes", "Schieff"], correct: 0, hint: "Mit -e am Ende." },
+                { type: "choice", question: "Welcher Buchstabe am Wortende wird weich ausgesprochen? Beispiel: Hund -> Hun[t]. Welcher Buchstabe steht dort?", options: ["d", "t", "b", "g"], correct: 0, hint: "Der Buchstabe für den Hund." },
+                { type: "choice", question: "Wie nennt man Wörter, die gleich klingen, aber unterschiedliche Bedeutung haben (z. B. Waise / Weise)?", options: ["Homophone", "Synonyme", "Antonyme", "Nomen"], correct: 0, hint: "Gleicher Klang." },
+                { type: "choice", question: "In welchem Satz ist das Wort 'heute' ein Adverb?", options: ["Heute regnet es.", "Der Tag heute ist schön.", "Heute ist ein Fest.", "Heute ist toll."], correct: 0, hint: "Umstandsbestimmung der Zeit." },
+                { type: "choice", question: "Welches Tier ist ein Nomen?", options: ["Laufen", "Katze", "schön", "und"], correct: 1, hint: "Ein Lebewesen." },
+                { type: "choice", question: "Wie viele Selbstlaute (Vokale) hat das Alphabet?", options: ["3", "5", "7", "8"], correct: 1, hint: "A, E, I, O, U." },
+                { type: "choice", question: "Welches Wort ist ein Verb?", options: ["Baum", "spielen", "blau", "schnell"], correct: 1, hint: "Etwas, das man tun kann." },
+                { type: "choice", question: "Welches Satzzeichen gehört an das Ende eines normalen Aussagesatzes?", options: ["Punkt", "Fragezeichen", "Ausrufezeichen", "Komma"], correct: 0, hint: "Der klassische Punkt." },
+                { type: "choice", question: "Wie nennt man die Mehrzahl eines Wortes noch?", options: ["Singular", "Plural", "Artikel", "Pronomen"], correct: 1, hint: "Mehrzahl-Fachbegriff." },
+                { type: "choice", question: "Was ist die Einzahl eines Wortes?", options: ["Plural", "Singular", "Tempus", "Kasus"], correct: 1, hint: "Einzahl-Fachbegriff." },
+                { type: "choice", question: "Welches Wort ist ein Adjektiv?", options: ["Tisch", "laufen", "groß", "wir"], correct: 2, hint: "Beschreibt eine Eigenschaft." },
+                { type: "choice", question: "Wie schreibt man den Satzanfang?", options: ["immer klein", "immer groß", "egal", "nur bei Nomen groß"], correct: 1, hint: "Erster Buchstabe eines Satzes." },
+                { type: "choice", question: "Welches Wort enthält ein 'ch' nach einem hellen Laut (wie in ich)?", options: ["Buch", "Kuchen", "Licht", "Dach"], correct: 2, hint: "Der ich-Laut." },
+                { type: "choice", question: "Welches Wort enthält einen Umlaut?", options: ["Haus", "Maus", "Häuser", "Hund"], correct: 2, hint: "Enthält ä, ö oder ü." },
+                { type: "choice", question: "Was ist ein Artikel?", options: ["der, die, das", "laufen, gehen", "und, aber", "ich, du, er"], correct: 0, hint: "Begleiter des Nomens." },
+                { type: "choice", question: "Welches Wort ist ein Begleiter?", options: ["eine", "schön", "rennen", "gestern"], correct: 0, hint: "Unbestimmter Artikel." },
+                { type: "choice", question: "Wie schreibt man 'hundert' as Nomen (die Zahl)?", options: ["Hundert", "hundert", "Hunderd", "hunderd"], correct: 0, hint: "Als Nomen großgeschrieben." },
+                { type: "choice", question: "Wie wird das Wort 'Hamster' richtig getrennt?", options: ["Ham-ster", "Ha-mster", "Hams-ter", "Hamst-er"], correct: 0, hint: "Nachsprech-Silben." },
+                { type: "choice", question: "Wie heißt die Vergangenheit von 'gehen'?", options: ["gegangen", "ging", "gehe", "wird gehen"], correct: 1, hint: "Präteritum-Form." },
+                { type: "choice", question: "Welche Zeitform drückt die Zukunft aus?", options: ["Präsens", "Präteritum", "Futur", "Perfekt"], correct: 2, hint: "Mit 'werden'." },
+                { type: "choice", question: "Was ist das Gegenteil von 'groß'?", options: ["klein", "dick", "schwer", "lang"], correct: 0, hint: "Nicht groß." },
+                { type: "choice", question: "Wie nennt man Wörter mit gegensätzlicher Bedeutung?", options: ["Synonyme", "Antonyme", "Homophone", "Nomen"], correct: 1, hint: "Gegenteile." },
+                { type: "choice", question: "Welches Wort ist ein Prädikat im Satz 'Der Hund bellt'?", options: ["Der", "Hund", "bellt", "keines"], correct: 2, hint: "Die Tätigkeit im Satz." },
+                { type: "choice", question: "Welches Wort ist ein Artikel?", options: ["ein", "groß", "Auto", "fahren"], correct: 0, hint: "Ein / eine." },
+                { type: "choice", question: "Wie viele Mitlaute (Konsonanten) hat das deutsche Alphabet ungefähr?", options: ["5", "10", "21", "26"], correct: 2, hint: "Alle außer den 5 Vokalen." },
+                { type: "choice", question: "Welches Wort reimt sich auf 'Haus'?", options: ["Maus", "Hund", "Katze", "Baum"], correct: 0, hint: "Klingt am Ende gleich." },
+                { type: "choice", question: "Wie schreibt man den Namen eines Wochentages?", options: ["immer klein", "immer groß", "wie Nomen groß", "egal"], correct: 2, hint: "Namen von Wochentagen sind Nomen." },
+                { type: "choice", question: "Was ist ein Satzglied?", options: ["Ein einzelner Buchstabe", "Ein Baustein des Satzes", "Ein Komma", "Eine Silbe"], correct: 1, hint: "Kann im Satz verschoben werden." },
+                { type: "choice", question: "Welcher Fall ist der 3. Fall?", options: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"], correct: 2, hint: "Wem-Fall." },
+                
+                { type: "input", question: "Finde den Buchstaben, der in 'Katze' nach dem kurzen 'a' kommt.", correct: "z", hint: "Kurzer Selbstlaut vor der Lücke." },
+                { type: "input", question: "Wie lautet das Partizip II (die vollendete Form) von dem Verb 'lesen'?", correct: "gelesen", hint: "Beginnt mit ge- und endet mit -n." },
+                { type: "input", question: "Wie lautet die Mehrzahl (Plural) von 'Schiff'?", correct: "Schiffe", hint: "Mit -e am Ende." },
+                { type: "input", question: "Wie heißt die einfache Vergangenheit (Präteritum) von 'gehen'?", correct: "ging", hint: "Ein kurzes Wort der Vergangenheit." },
+                { type: "input", question: "Welcher bestimmte Artikel (männlich, Nominativ) passt in diesen Satz: '___ Hund bellt laut.'?", correct: "der", hint: "Männlicher Begleiter." },
+                { type: "input", question: "Wo kaufen wir sonntags frische Brötchen ein? (Wo arbeitet der Bäcker?):", correct: "Bäckerei", hint: "Ein Ort mit frischem Gebäck." },
+                { type: "input", question: "Was haben wir gestern auf dem Sportplatz gemacht? Ergänze das Verb: 'Gestern ________ wir Fußball.'", correct: "spielten", hint: "Vergangenheitsform von spielen." },
+                
+                { type: "error_hunt", sentence: "Der Bäcker backt frische Bröhtchen.", targetWord: "Brötchen", wrongWord: "Bröhtchen", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Die Ckatze schleicht leise durch das Gras.", targetWord: "Katze", wrongWord: "Ckatze", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Heute scheint den ganzen Tag die warme Sone.", targetWord: "Sonne", wrongWord: "Sone", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Wir fahren morgen mit dem Farad in die Schule.", targetWord: "Fahrrad", wrongWord: "Farad", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Im Winter spielen die Kinder im weißen Schne.", targetWord: "Schnee", wrongWord: "Schne", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Der Hund läuft schnell über die große Strase.", targetWord: "Straße", wrongWord: "Strase", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "In der Schultasche liegen viele Hevte und Stifte.", targetWord: "Hefte", wrongWord: "Hevte", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Der große Löwe schläft tief im grühnen Gras.", targetWord: "grünen", wrongWord: "grühnen", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Jeden Morgen trinke ich ein Glas frische Milsh.", targetWord: "Milch", wrongWord: "Milsh", hint: "Finde das falsch geschriebene Wort im Satz!" },
+                { type: "error_hunt", sentence: "Die bunte blume blüht wunderschön im Garten.", targetWord: "Blume", wrongWord: "blume", hint: "Finde das Wort mit dem Kleinschreibungs-Fehler!" }
             ],
             Sachkunde: [
                 { question: "Wie heißt die Hauptstadt von Deutschland?", options: ["München", "Hamburg", "Berlin", "Köln"], correct: 2, hint: "Liegt an der Spree." },
@@ -1032,7 +1051,6 @@
         function getRewardsList() {
             let saved = JSON.parse(localStorage.getItem('custom_rewards_list') || 'null');
             let list = saved ? saved : defaultRewards;
-            // Immer automatisch von niedrig nach hoch sortieren
             list.sort((a, b) => a.cost - b.cost);
             return list;
         }
@@ -1055,7 +1073,6 @@
 
             let rewards = getRewardsList();
             
-            // Menü-Optionen zusammenbauen
             let menuText = "Prämien-Shop verwalten:\n\n" + 
                            rewards.map((r, i) => `${i+1}) ${r.cost} Hufeisen = ${r.text}`).join("\n") + 
                            `\n\nGib die Nummer einer Prämie ein (1-${rewards.length}) um sie zu bearbeiten/löschen,\noder tippe 'NEU' um eine weitere Prämie hinzuzufügen:`;
@@ -1074,7 +1091,7 @@
 
                 if (!isNaN(cost) && cost > 0) {
                     rewards.push({ cost: cost, text: text.trim() });
-                    rewards.sort((a, b) => a.cost - b.cost); // Sortieren
+                    rewards.sort((a, b) => a.cost - b.cost);
                     localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
                     renderRewardsListDisplay();
                     syncToCloud();
@@ -1111,7 +1128,7 @@
 
             rewards[index].cost = newCost;
             rewards[index].text = newText.trim();
-            rewards.sort((a, b) => a.cost - b.cost); // Automatisch nach Hufeisen sortieren
+            rewards.sort((a, b) => a.cost - b.cost);
 
             localStorage.setItem('custom_rewards_list', JSON.stringify(rewards));
             renderRewardsListDisplay();
@@ -2152,18 +2169,16 @@
             }
 
             const currentQ = activeQuestions[currentQuestionIndex];
-            
             lastActivityTime = Date.now();
 
             let counterText = isChallengeMode ? `Frage ${currentQuestionIndex + 1} von 20 (Richtige: ${challengeCorrectCount}/15)` : `Frage ${currentQuestionIndex + 1} von ${activeQuestions.length}`;
             document.getElementById('question-counter').innerText = counterText;
-            document.getElementById('question-text').innerText = currentQ.question;
 
             const btnHint = document.getElementById('btn-hint');
             const hintBox = document.getElementById('hint-box');
             hintBox.classList.add('hidden');
 
-            if (!isChallengeMode && currentSubject === 'Mathe' && currentQ.hint) {
+            if (!isChallengeMode && currentQ.hint) {
                 btnHint.classList.remove('hidden');
                 document.getElementById('hint-text').innerText = currentQ.hint;
             } else {
@@ -2172,22 +2187,48 @@
 
             const optionsContainer = document.getElementById('options-container');
             const directInputContainer = document.getElementById('direct-input-container');
+            const inputLabel = document.getElementById('direct-input-label');
+            const inputField = document.getElementById('quiz-user-input');
 
-            let isTextOrUnitTask = isChallengeMode || (currentSubject !== 'Mathe') || 
-                                   currentQ.question.includes("Ein") || 
-                                   currentQ.question.includes("Wie viel") || 
-                                   currentQ.question.includes("Kilogramm") || 
-                                   currentQ.question.includes("Meter") || 
-                                   currentQ.question.includes("Euro") || 
-                                   currentQ.question.includes("Gramm") || 
-                                   currentQ.question.includes("ml") || 
-                                   currentQ.question.includes("Liter") || 
-                                   (currentQ.options && currentQ.options.some(opt => opt.includes("€") || opt.includes("g") || opt.includes("m") || opt.includes("l") || opt.includes("Cent")));
+            let isInputType = false;
+            let displayQuestionText = currentQ.question;
 
-            if (isStrictDirectInputMode || !isTextOrUnitTask) {
+            if (currentSubject === 'Deutsch') {
+                if (currentQ.type === 'error_hunt') {
+                    isInputType = true;
+                    displayQuestionText = `Finde den Fehler im Satz und korrigiere das falsche Wort:<br><br><em>„${currentQ.sentence}“</em>`;
+                    inputLabel.innerText = "Trage das richtige Wort ein:";
+                    inputField.setAttribute('data-target', currentQ.targetWord);
+                } else if (currentQ.type === 'input') {
+                    isInputType = true;
+                    displayQuestionText = currentQ.question;
+                    inputLabel.innerText = "Trage die Lösung ein:";
+                    inputField.setAttribute('data-target', currentQ.correct);
+                } else {
+                    isInputType = false;
+                }
+            } else {
+                let isTextOrUnitTask = isChallengeMode || (currentSubject !== 'Mathe') || 
+                                       currentQ.question.includes("Ein") || 
+                                       currentQ.question.includes("Wie viel") || 
+                                       currentQ.question.includes("Kilogramm") || 
+                                       currentQ.question.includes("Meter") || 
+                                       currentQ.question.includes("Euro") || 
+                                       currentQ.question.includes("Gramm") || 
+                                       currentQ.question.includes("ml") || 
+                                       currentQ.question.includes("Liter") || 
+                                       (currentQ.options && currentQ.options.some(opt => opt.includes("€") || opt.includes("g") || opt.includes("m") || opt.includes("l") || opt.includes("Cent")));
+                isInputType = isStrictDirectInputMode || !isTextOrUnitTask;
+                inputLabel.innerText = "Trage das Ergebnis selbst ein:";
+                inputField.setAttribute('data-target', currentQ.options[currentQ.correct]);
+            }
+
+            document.getElementById('question-text').innerHTML = displayQuestionText;
+
+            if (isInputType) {
                 optionsContainer.classList.add('hidden');
                 directInputContainer.classList.remove('hidden');
-                document.getElementById('quiz-user-input').value = '';
+                inputField.value = '';
                 document.getElementById('quiz-feedback').innerText = '';
             } else {
                 directInputContainer.classList.add('hidden');
@@ -2220,9 +2261,10 @@
             resumeTimerOnTaskComplete();
 
             const currentQ = activeQuestions[currentQuestionIndex];
-            const userVal = document.getElementById('quiz-user-input').value.trim();
+            const inputField = document.getElementById('quiz-user-input');
+            const userVal = inputField.value.trim();
             const feedbackEl = document.getElementById('quiz-feedback');
-            const correctText = currentQ.options[currentQ.correct];
+            const correctText = inputField.getAttribute('data-target') || "";
 
             if (!userVal) {
                 feedbackEl.innerText = "⚠️ Bitte gib eine Antwort ein!";
@@ -2232,9 +2274,14 @@
 
             sessionStats.totalAnswered++;
             
-            let cleanUser = extractCleanNumber(userVal);
-            let cleanCorrect = extractCleanNumber(correctText);
-            const isCorrect = (cleanUser === cleanCorrect) || (userVal.toLowerCase() === correctText.toLowerCase());
+            let isCorrect = false;
+            if (currentSubject === 'Deutsch') {
+                isCorrect = (userVal.toLowerCase() === correctText.toLowerCase());
+            } else {
+                let cleanUser = extractCleanNumber(userVal);
+                let cleanCorrect = extractCleanNumber(correctText);
+                isCorrect = (cleanUser === cleanCorrect) || (userVal.toLowerCase() === correctText.toLowerCase());
+            }
 
             if (isChallengeMode) {
                 if (isCorrect) {
@@ -2266,22 +2313,17 @@
             } else {
                 if (isCorrect) {
                     sessionStats.totalCorrect++;
-                    appendToLiveLog(currentQ.question, userVal, true);
+                    appendToLiveLog(currentQ.question || currentQ.sentence, userVal, true);
                     
                     feedbackEl.innerText = "🎯 Richtig!";
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
-
-                    if (isStrictDirectInputMode && sessionStats.totalCorrect >= 16) {
-                        setTimeout(showSuccessFinish, 800);
-                        return;
-                    }
 
                     setTimeout(() => {
                         currentQuestionIndex++;
                         loadQuestion();
                     }, 800);
                 } else {
-                    appendToLiveLog(currentQ.question, userVal, false);
+                    appendToLiveLog(currentQ.question || currentQ.sentence, userVal, false);
                     feedbackEl.innerText = `❌ Falsch! Richtig wäre: ${correctText}. Nächste Aufgabe...`;
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-red-600";
                     
@@ -2538,7 +2580,6 @@
                 currentHorseLevel++;
                 localStorage.setItem('horse_completed_level', currentHorseLevel);
 
-                // Das Entstehungsdatum für diese Urkunde dauerhaft speichern
                 let horseDates = JSON.parse(localStorage.getItem('horse_level_dates') || '{}');
                 if (!horseDates[currentHorseLevel]) {
                     horseDates[currentHorseLevel] = getTodayString();
