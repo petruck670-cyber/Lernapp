@@ -577,7 +577,7 @@
             </div>
 
             <!-- Button für Urkunde -->
-            <button id="btn-print-certificate" onclick="printHorseCertificate(latestFinishedHorseLevel)" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition mb-3 flex items-center justify-center gap-2 hidden">
+            <button id="btn-print-certificate" onclick="printHorseCertificate(latestFinishedHorseLevel)" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition mb-3 flex items-center justify-center gap-2 hidden">
                 <span>🖨️</span> <span id="cert-btn-text">Urkunde drucken</span>
             </button>
 
@@ -2063,6 +2063,7 @@
             if (globalTimeLeft <= 0) {
                 clearInterval(globalTimerInterval);
                 isSessionActive = false;
+                // ERGEBNIS-FENSTER WIEDER AKTIVIERT BEI ZEITABLAUF!
                 showSessionFinished();
             }
         }
@@ -2318,6 +2319,12 @@
                     feedbackEl.innerText = "🎯 Richtig!";
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
 
+                    // Wenn während der Nachhol-Phase 16 Richtige erreicht werden -> sofort erfolgreich beenden!
+                    if (sessionStats.totalCorrect >= 16 && !isSessionActive) {
+                        setTimeout(() => showSessionFinished(), 800);
+                        return;
+                    }
+
                     setTimeout(() => {
                         currentQuestionIndex++;
                         loadQuestion();
@@ -2405,14 +2412,18 @@
                 if (isCorrect) {
                     sessionStats.totalCorrect++;
                     appendToLiveLog(currentQ.question, selectedText, true);
-
-                    currentQuestionIndex++;
-                    loadQuestion();
                 } else {
                     appendToLiveLog(currentQ.question, selectedText, false);
-                    currentQuestionIndex++;
-                    loadQuestion();
                 }
+
+                // Wenn während der Nachhol-Phase 16 Richtige erreicht werden -> sofort erfolgreich beenden!
+                if (sessionStats.totalCorrect >= 16 && !isSessionActive) {
+                    setTimeout(() => showSessionFinished(), 400);
+                    return;
+                }
+
+                currentQuestionIndex++;
+                loadQuestion();
             }
         }
 
