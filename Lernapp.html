@@ -110,11 +110,13 @@
                     if (cloudData.session_logs) localStorage.setItem('session_logs', JSON.stringify(cloudData.session_logs));
                     if (cloudData.custom_rewards_list) localStorage.setItem('custom_rewards_list', JSON.stringify(cloudData.custom_rewards_list));
                     if (cloudData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(cloudData.horse_level_dates));
+                    if (cloudData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(cloudData.challenge_progress));
                     
                     if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                     if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
                     if (typeof initLogTable === 'function') initLogTable();
                     if (typeof initSessionLogTable === 'function') initSessionLogTable();
+                    if (typeof updateChallengeMenuDisplay === 'function') updateChallengeMenuDisplay();
                     isUpdatingFromRemote = false;
                 }
             } catch (e) {
@@ -135,7 +137,8 @@
                     learning_logs: JSON.parse(localStorage.getItem('learning_logs') || '{}'),
                     session_logs: JSON.parse(localStorage.getItem('session_logs') || '{}'),
                     custom_rewards_list: JSON.parse(localStorage.getItem('custom_rewards_list') || 'null'),
-                    horse_level_dates: JSON.parse(localStorage.getItem('horse_level_dates') || '{}')
+                    horse_level_dates: JSON.parse(localStorage.getItem('horse_level_dates') || '{}'),
+                    challenge_progress: JSON.parse(localStorage.getItem('challenge_progress') || 'null')
                 };
                 await setDoc(docRef, cloudPayload);
                 if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
@@ -156,11 +159,13 @@
                 if (remoteData.session_logs) localStorage.setItem('session_logs', JSON.stringify(remoteData.session_logs));
                 if (remoteData.custom_rewards_list) localStorage.setItem('custom_rewards_list', JSON.stringify(remoteData.custom_rewards_list));
                 if (remoteData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(remoteData.horse_level_dates));
+                if (remoteData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(remoteData.challenge_progress));
 
                 if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                 if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
                 if (typeof initLogTable === 'function') initLogTable();
                 if (typeof initSessionLogTable === 'function') initSessionLogTable();
+                if (typeof updateChallengeMenuDisplay === 'function') updateChallengeMenuDisplay();
                 isUpdatingFromRemote = false;
             }
         });
@@ -1683,7 +1688,9 @@
                 prog.lockedLevels[currentChallengeLevel] = Date.now() + (24 * 60 * 60 * 1000);
             }
             localStorage.setItem('challenge_progress', JSON.stringify(prog));
-            syncToCloud();
+            if (typeof syncToCloud === 'function') {
+                syncToCloud();
+            }
 
             showScreen('screen-result');
             document.getElementById('btn-print-certificate').classList.add('hidden');
@@ -2107,10 +2114,7 @@
         }
 
         function continueUntilTarget() {
-            // WENN DER TIMER ABGELAUFEN WAR UND MAN HIERAUF KLICKT, STARTEN WIR EIN SPEZIELLES NACHHOL-QUIZ BIS 16
             isStrictDirectInputMode = true;
-            isSessionActive = true; // Aktiviert den Modus, der bei 16 Richtigen das Ergebnis auslöst!
-            sessionStats.totalCorrect = 0; // Setzt den Zähler für den Nachhol-Modus zurück oder lässt ihn weiterzählen
             openCategory('Mathe', false);
         }
 
@@ -2321,12 +2325,6 @@
                     feedbackEl.innerText = "🎯 Richtig!";
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
 
-                    // NUR WENN DER NACHHOL-MODUS AKTIV IST (nach Klick auf "Weiterspielen bis 16 Richtige"): stoppt bei 16!
-                    if (sessionStats.totalCorrect >= 16 && isSessionActive && isStrictDirectInputMode) {
-                        setTimeout(() => showSessionFinished(), 800);
-                        return;
-                    }
-
                     setTimeout(() => {
                         currentQuestionIndex++;
                         loadQuestion();
@@ -2416,12 +2414,6 @@
                     appendToLiveLog(currentQ.question, selectedText, true);
                 } else {
                     appendToLiveLog(currentQ.question, selectedText, false);
-                }
-
-                // NUR WENN DER NACHHOL-MODUS AKTIV IST (nach Klick auf "Weiterspielen bis 16 Richtige"): stoppt bei 16!
-                if (sessionStats.totalCorrect >= 16 && isSessionActive && isStrictDirectInputMode) {
-                    setTimeout(() => showSessionFinished(), 400);
-                    return;
                 }
 
                 currentQuestionIndex++;
