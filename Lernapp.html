@@ -2063,7 +2063,6 @@
             if (globalTimeLeft <= 0) {
                 clearInterval(globalTimerInterval);
                 isSessionActive = false;
-                // ERGEBNIS-FENSTER WIEDER AKTIVIERT BEI ZEITABLAUF!
                 showSessionFinished();
             }
         }
@@ -2108,7 +2107,10 @@
         }
 
         function continueUntilTarget() {
+            // WENN DER TIMER ABGELAUFEN WAR UND MAN HIERAUF KLICKT, STARTEN WIR EIN SPEZIELLES NACHHOL-QUIZ BIS 16
             isStrictDirectInputMode = true;
+            isSessionActive = true; // Aktiviert den Modus, der bei 16 Richtigen das Ergebnis auslöst!
+            sessionStats.totalCorrect = 0; // Setzt den Zähler für den Nachhol-Modus zurück oder lässt ihn weiterzählen
             openCategory('Mathe', false);
         }
 
@@ -2319,8 +2321,8 @@
                     feedbackEl.innerText = "🎯 Richtig!";
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
 
-                    // Wenn während der Nachhol-Phase 16 Richtige erreicht werden -> sofort erfolgreich beenden!
-                    if (sessionStats.totalCorrect >= 16 && !isSessionActive) {
+                    // NUR WENN DER NACHHOL-MODUS AKTIV IST (nach Klick auf "Weiterspielen bis 16 Richtige"): stoppt bei 16!
+                    if (sessionStats.totalCorrect >= 16 && isSessionActive && isStrictDirectInputMode) {
                         setTimeout(() => showSessionFinished(), 800);
                         return;
                     }
@@ -2416,8 +2418,8 @@
                     appendToLiveLog(currentQ.question, selectedText, false);
                 }
 
-                // Wenn während der Nachhol-Phase 16 Richtige erreicht werden -> sofort erfolgreich beenden!
-                if (sessionStats.totalCorrect >= 16 && !isSessionActive) {
+                // NUR WENN DER NACHHOL-MODUS AKTIV IST (nach Klick auf "Weiterspielen bis 16 Richtige"): stoppt bei 16!
+                if (sessionStats.totalCorrect >= 16 && isSessionActive && isStrictDirectInputMode) {
                     setTimeout(() => showSessionFinished(), 400);
                     return;
                 }
