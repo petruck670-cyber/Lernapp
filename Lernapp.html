@@ -248,7 +248,7 @@
             <div class="mb-6 bg-gradient-to-r from-amber-500 to-yellow-500 p-4 rounded-2xl border-2 border-yellow-300 shadow-md text-white text-left">
                 <div class="flex justify-between items-center mb-1">
                     <h3 class="font-black text-base flex items-center gap-1.5"><span>🏆</span> <span>Wochen-Challenge</span></h3>
-                    <button onclick="adminResetChallenge()" title="Challenge zurücksetzen (PIN)" class="bg-white/20 hover:bg-white/30 text-white p-1 rounded-lg text-xs transition">⚙️ Reset</button>
+                    <button onclick="adminResetChallenge()" title="Challenge zurücksetzen oder als bestanden setzen (PIN)" class="bg-white/20 hover:bg-white/30 text-white p-1 rounded-lg text-xs transition">⚙️ Reset / Admin</button>
                 </div>
                 <p class="text-xs text-yellow-100 mb-3">Schaffe 15 von 20 Fragen und gewinne bis zu 10 €!</p>
                 <div id="challenge-menu-info" class="text-xs font-bold mb-3 bg-black/10 p-2 rounded-xl">
@@ -1431,15 +1431,34 @@
         }
 
         function adminResetChallenge() {
-            let pin = prompt("Bitte Admin-PIN eingeben zum Zurücksetzen der Challenge:");
+            let pin = prompt("Bitte Admin-PIN eingeben:");
             if (!checkPinWithLockdown(pin, "0307")) return;
 
-            localStorage.removeItem('challenge_progress');
-            localStorage.removeItem('challenge_saved_state');
-            updateChallengeMenuDisplay();
-            syncToCloud();
-            alert("Wochen-Challenge wurde erfolgreich auf Level 1 zurückgesetzt!");
-            openChallengeLevelSelect();
+            let choice = prompt("Wähle eine Admin-Aktion für die Wochen-Challenge:\n1) Alles komplett zurücksetzen (auf Level 1)\n2) Ein bestimmtes Level nachträglich als BESTANDEN markieren", "1");
+            if (choice === "2") {
+                let lvlStr = prompt("Welches Level wurde bestanden? (1 bis 10):", "1");
+                let lvl = parseInt(lvlStr);
+                if (!isNaN(lvl) && lvl >= 1 && lvl <= 10) {
+                    let prog = getChallengeProgress();
+                    prog.passedLevels = prog.passedLevels || {};
+                    prog.passedLevels[lvl] = Date.now();
+                    if (prog.lockedLevels && prog.lockedLevels[lvl]) delete prog.lockedLevels[lvl];
+                    if (prog.unlockedLevel <= lvl) prog.unlockedLevel = lvl + 1;
+                    localStorage.setItem('challenge_progress', JSON.stringify(prog));
+                    syncToCloud();
+                    updateChallengeMenuDisplay();
+                    alert(`Level ${lvl} wurde erfolgreich als BESTANDEN markiert!`);
+                } else {
+                    alert("Ungültiges Level!");
+                }
+            } else {
+                localStorage.removeItem('challenge_progress');
+                localStorage.removeItem('challenge_saved_state');
+                updateChallengeMenuDisplay();
+                syncToCloud();
+                alert("Wochen-Challenge wurde komplett auf Level 1 zurückgesetzt!");
+                openChallengeLevelSelect();
+            }
         }
 
         function adminDeleteCertificates() {
@@ -1529,7 +1548,7 @@
                 let prevPassedTime = (i > 1 && prog.passedLevels && prog.passedLevels[i - 1]) ? prog.passedLevels[i - 1] : 0;
 
                 let lockUntil = prog.lockedLevels ? prog.lockedLevels[i] : 0;
-                let isLevelLockedByError = lockUntil && now < lockUntil;
+                let isLevelLockedByError = lockUntil && now < lockUntil && !isPassed;
 
                 let isLevelLockedByWeek = prevPassedTime && (now - prevPassedTime < oneWeekMs) && !isPassed;
 
@@ -1680,6 +1699,7 @@
                 if (!prog.passedLevels) prog.passedLevels = {};
                 prog.passedLevels[currentChallengeLevel] = Date.now();
 
+                // Fehler-Sperre sofort entfernen, wenn das Level erfolgreich bestanden wurde!
                 if (prog.lockedLevels && prog.lockedLevels[currentChallengeLevel]) {
                     delete prog.lockedLevels[currentChallengeLevel];
                 }
