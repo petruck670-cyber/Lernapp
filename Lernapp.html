@@ -30,6 +30,9 @@
             #screen-cert-box,
             #screen-horseshoe-box,
             #screen-admin-exam,
+            #screen-admin-menu,
+            #screen-question-editor,
+            #screen-question-list,
             #screen-lockdown {
                 display: none !important;
             }
@@ -114,6 +117,7 @@
                     if (cloudData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(cloudData.challenge_progress));
                     if (cloudData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(cloudData.custom_exam_indices));
                     if (cloudData.last_exam_date) localStorage.setItem('last_exam_date', cloudData.last_exam_date);
+                    if (cloudData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(cloudData.custom_quiz_data));
                     
                     if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                     if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
@@ -143,7 +147,8 @@
                     horse_level_dates: JSON.parse(localStorage.getItem('horse_level_dates') || '{}'),
                     challenge_progress: JSON.parse(localStorage.getItem('challenge_progress') || 'null'),
                     custom_exam_indices: JSON.parse(localStorage.getItem('custom_exam_indices') || '[]'),
-                    last_exam_date: localStorage.getItem('last_exam_date') || ''
+                    last_exam_date: localStorage.getItem('last_exam_date') || '',
+                    custom_quiz_data: JSON.parse(localStorage.getItem('custom_quiz_data') || 'null')
                 };
                 await setDoc(docRef, cloudPayload);
                 if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
@@ -166,6 +171,7 @@
                 if (remoteData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(remoteData.challenge_progress));
                 if (remoteData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(remoteData.custom_exam_indices));
                 if (remoteData.last_exam_date) localStorage.setItem('last_exam_date', remoteData.last_exam_date);
+                if (remoteData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(remoteData.custom_quiz_data));
 
                 if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                 if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
@@ -256,7 +262,7 @@
                     <button onclick="resetExamLimit()" title="Prüfungs-Sperre aufheben (Admin-PIN)" class="w-1/4 bg-red-100 hover:bg-red-200 text-red-800 font-bold py-2.5 px-1 rounded-xl transition text-[10px] flex items-center justify-center gap-0.5">
                         <span>🔄 Reset</span>
                     </button>
-                    <button onclick="openAdminExam()" title="Fragen verwalten (Admin-PIN)" class="w-1/4 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-2.5 px-1 rounded-xl transition text-[10px] flex items-center justify-center gap-0.5">
+                    <button onclick="openAdminMenu()" title="Admin-Bereich" class="w-1/4 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-2.5 px-1 rounded-xl transition text-[10px] flex items-center justify-center gap-0.5">
                         <span>⚙️ Admin</span>
                     </button>
                 </div>
@@ -268,7 +274,7 @@
             <div class="mb-6 bg-gradient-to-r from-amber-500 to-yellow-500 p-4 rounded-2xl border-2 border-yellow-300 shadow-md text-white text-left">
                 <div class="flex justify-between items-center mb-1">
                     <h3 class="font-black text-base flex items-center gap-1.5"><span>🏆</span> <span>Wochen-Challenge</span></h3>
-                    <button onclick="adminResetChallenge()" title="Challenge zurücksetzen oder als bestanden setzen (PIN)" class="bg-white/20 hover:bg-white/30 text-white p-1 rounded-lg text-xs transition">⚙️ Reset / Admin</button>
+                    <button onclick="adminResetChallenge()" title="Challenge zurücksetzen (PIN)" class="bg-white/20 hover:bg-white/30 text-white p-1 rounded-lg text-xs transition">⚙️ Reset / Admin</button>
                 </div>
                 <p class="text-xs text-yellow-100 mb-3">Schaffe 15 von 20 Fragen und gewinne bis zu 10 €!</p>
                 <div id="challenge-menu-info" class="text-xs font-bold mb-3 bg-black/10 p-2 rounded-xl">
@@ -423,6 +429,52 @@
 
         </div>
 
+        <!-- ADMIN-AUSWAHLMENÜ -->
+        <div id="screen-admin-menu" class="p-6 text-center hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black text-amber-700">⚙️ Admin-Bereich</h2>
+                <button onclick="returnToMenu()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-1 px-3 rounded-lg transition">🏠 Hauptmenü</button>
+            </div>
+            <p class="text-xs text-gray-600 mb-4 text-left">Wähle einen Bereich zum Verwalten aus:</p>
+            <div class="space-y-3">
+                <button onclick="openAdminExam()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">
+                    📝 Prüfungsfragen auswählen
+                </button>
+                <button onclick="openQuestionEditorMenu()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">
+                    ✏️ Fragen bearbeiten & hinzufügen
+                </button>
+            </div>
+        </div>
+
+        <!-- FRAGEN-EDITOR MENÜ -->
+        <div id="screen-question-editor" class="p-6 text-center hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black text-indigo-700">✏️ Fragen-Editor</h2>
+                <button onclick="openAdminMenu()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-1 px-3 rounded-lg transition">⬅️ Zurück</button>
+            </div>
+            <p class="text-xs text-gray-600 mb-4 text-left">Wähle die Kategorie, deren Fragen du bearbeiten möchtest:</p>
+            <div class="space-y-2">
+                <button onclick="loadEditorForCategory('Mathe')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">🔢 Mathematik Fragen bearbeiten</button>
+                <button onclick="loadEditorForCategory('Deutsch')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">📚 Deutsch Fragen bearbeiten</button>
+                <button onclick="loadEditorForCategory('Sachkunde')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">🌍 Sachkunde Fragen bearbeiten</button>
+                <button onclick="loadEditorForCategory('Alltag')" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">🧠 Alltag & Wissen Fragen bearbeiten</button>
+            </div>
+        </div>
+
+        <!-- EINZELNE FRAGEN LISTE -->
+        <div id="screen-question-list" class="p-6 text-center hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="editor-list-title" class="text-lg font-black text-indigo-700">Fragen verwalten</h2>
+                <button onclick="openQuestionEditorMenu()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-1 px-3 rounded-lg transition">⬅️ Fach wählen</button>
+            </div>
+            <button onclick="addNewQuestionPrompt()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs mb-3">
+                ➕ Neue Frage in dieses Fach einfügen
+            </button>
+            <div id="editor-questions-container" class="bg-white border-2 border-indigo-200 p-3 rounded-2xl mb-4 text-left max-h-72 overflow-y-auto space-y-2 text-xs">
+                <!-- Dynamisch -->
+            </div>
+        </div>
+
         <!-- ADMIN-BERICH PRÜFUNGS-AUSWAHL -->
         <div id="screen-admin-exam" class="p-6 text-center hidden">
             <div class="flex justify-between items-center mb-4">
@@ -462,7 +514,6 @@
             <div class="space-y-2">
                 <button onclick="redeemHorseshoes()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs">🎁 Hufeisen einlösen</button>
                 <button onclick="editRewardsList()" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-2 px-4 rounded-xl transition text-xs">⚙️ Prämien-Shop bearbeiten (Admin-PIN)</button>
-                <!-- NEU: Hufeisen direkt manuell korrigieren -->
                 <button onclick="adminEditHorseshoesDirectly()" class="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold py-2 px-4 rounded-xl transition text-xs">🛠️ Hufeisen-Punkte manuell anpassen (Admin-PIN)</button>
             </div>
         </div>
@@ -589,7 +640,7 @@
 
     <!-- JavaScript Logik -->
     <script>
-        const quizData = {
+        const defaultQuizData = {
             Mathe: [
                 { question: "Was ist das Ergebnis von 376 + 245?", options: ["621", "611", "511", "601"], correct: 0, hint: "Addiere zuerst die Hunderter (300 + 200), dann die Zehner (70 + 40) und zum Schluss die Einer (6 + 5)." },
                 { question: "Wie viel sind 8 mal 9?", options: ["72", "64", "81", "56"], correct: 0, hint: "Nutze den Trick mit der 10: Rechne 8 mal 10 und ziehe danach einmal die 8 ab." },
@@ -791,7 +842,7 @@
                 { question: "Welches Sinnesorgan nutzen wir zum Hören?", options: ["Ohr", "Auge", "Nase", "Haut"], correct: 0, hint: "Nimmt Schallwellen wahr." },
                 { question: "Welche Tiere gehören zu den Amphibien?", options: ["Frösche", "Hunde", "Fische", "Vögel"], correct: 0, hint: "Leben an Land und im Wasser." },
                 { question: "Wie nennt man die Schicht aus Gasen, die die Erde umgibt?", options: ["Atmosphäre", "Lithosphäre", "Hydrosphäre", "Biosphäre"], correct: 0, hint: "Die Lufthülle." },
-                { question: "Welche Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
+                { question: "Какие Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
                 { question: "Welcher Monat hat normalerweise die wenigsten Tage?", options: ["Februar", "Januar", "April", "Dezember"], correct: 0, hint: "Hat nur 28 oder 29 Tage." },
                 { question: "Welches ist das leichteste chemische Element im Universum?", options: ["Wasserstoff", "Sauerstoff", "Helium", "Kohlenstoff"], correct: 0, hint: "H." }
             ],
@@ -822,7 +873,7 @@
                 { type: "input", question: "Aus welchen drei Farben besteht die deutsche Nationalflagge von oben nach unten?", correct: "Schwarz-Rot-Gold", alt: "schwarz rot gold", hint: "Schwarz, Rot, Gold." },
                 { type: "choice", question: "Welcher Monat hat als einziger manchmal nur 28 Tage?", options: ["Januar", "Februar", "März", "Mai"], correct: 1, hint: "Der kürzeste Monat." },
                 { type: "input", question: "Wie viele Monate hat ein ganzes Jahr?", correct: "12", alt: "zwölf", hint: "Von Januar bis Dezember." },
-                { type: "choice", question: "Wie viele Nachbarländer hat Deutschland (die direkt an unsere Grenzen stoßen)?", options: ["5", "7", "9", "11"], correct: 2, hint: "Genau 9 Nachbarn." },
+                { type: "choice", question: "Welche Nachbarländer hat Deutschland (die direkt an unsere Grenzen stoßen)?", options: ["5", "7", "9", "11"], correct: 2, hint: "Genau 9 Nachbarn." },
                 { type: "input", question: "Wie heißt die berühmte Hansestadt im Norden Deutschlands mit einem riesigen Hafen?", correct: "Hamburg", alt: "hamburg", hint: "Freie und Hansestadt Hamburg." },
                 { type: "choice", question: "Welche Farben hat die Flagge unseres Bundeslandes (Baden-Württemberg)?", options: ["Schwarz-Rot-Gold", "Schwarz-Gold", "Blau-Weiß", "Rot-Weiß"], correct: 1, hint: "Schwarz-Gold." },
                 { type: "input", question: "Wie heißt das Parlament in Berlin, in dem die deutschen Politiker tagen?", correct: "Bundestag", alt: "bundestag", hint: "Der Bundestag." },
@@ -858,6 +909,14 @@
                 { type: "input", question: "Wie nennt man das männliche, erwachsene Pferd?", correct: "Hengst", alt: "hengst", hint: "Männliches Pferd." }
             ]
         };
+
+        // Lade benutzerdefinierte Fragen aus dem LocalStorage falls vorhanden, sonst Standard
+        let quizData = JSON.parse(localStorage.getItem('custom_quiz_data') || JSON.stringify(defaultQuizData));
+
+        function saveQuizData() {
+            localStorage.setItem('custom_quiz_data', JSON.stringify(quizData));
+            syncToCloud();
+        }
 
         const horseLevels = [
             [
@@ -946,84 +1005,6 @@
             ]
         ];
 
-        const horseIcons = ["🐴", "🐎", "🦄", "🎠", "🌟", "⚡", "🔥", "💎", "👑", "🚀", "🌈", "🏆", "✨", "🪽"];
-        const funnySignatures = [
-            "Dr. med. vet. Hufschlag",
-            "Prof. Dr. Galopp",
-            "Cheftrainer Huf & Haken",
-            "Klopfer, das Rennpferd",
-            "Major Tom & die Ponys",
-            "Geprüft per Hufabdruck 🐾",
-            "Graf von Koppel",
-            "Ministerium für Möhren"
-        ];
-
-        const rallyStepsData = [
-            { display: "128 + 245", target: 373 }, { display: "500 - 184", target: 316 },
-            { display: "15 x 12", target: 180 }, { display: "450 : 9", target: 50 },
-            { display: "Max hat 36 Murmeln und schenkt Lisa 14. Wie viele hat er noch?", target: 22 },
-            { display: "34 + 18 + 52", target: 104 }, { display: "840 - 370", target: 470 },
-            { display: "24 x 4", target: 96 }, { display: "630 : 7", target: 90 },
-            { display: "Ein Buch kostet 18 €. Anna kauft 3 Stück. Wie viel zahlt sie?", target: 54 },
-            { display: "75 + 125 - 40", target: 160 }, { display: "1000 - 589", target: 411 },
-            { display: "14 x 7", target: 98 }, { display: "720 : 8", target: 90 },
-            { display: "Auf einem Parkplatz stehen 24 Autos mit je 4 Reifen. Wie viele Reifen sind das?", target: 96 },
-            { display: "65 + 48 + 37", target: 150 }, { display: "432 + 189", target: 621 },
-            { display: "18 x 5", target: 90 }, { display: "810 : 9", target: 90 },
-            { display: "Tim hat 60 Min Schulweg pro Tag (Hin und zurück). Wie viele Min in 5 Tagen?", target: 300 },
-            { display: "250 - 85 + 40", target: 205 }, { display: "650 - 275", target: 375 },
-            { display: "16 x 6", target: 96 }, { display: "540 : 6", target: 90 },
-            { display: "Ein Bauer hat 120 Äpfel und verteilt sie gleichmäßig an 4 Kinder. Wie viele bekommt jedes?", target: 30 },
-            { display: "99 + 155 + 46", target: 300 }, { display: "734 - 289", target: 445 },
-            { display: "13 x 8", target: 104 }, { display: "480 : 8", target: 60 },
-            { display: "In einem Kino sind 8 Reihen mit je 15 Plätzen besetzt. Wie viele Gäste sind da?", target: 120 },
-            { display: "320 + 415 - 90", target: 645 }, { display: "800 - 435", target: 365 },
-            { display: "17 x 4", target: 68 }, { display: "560 : 7", target: 80 },
-            { display: "Sarah läuft täglich 400 m zur Schule und zurück. Wie viel Meter in 5 Schultagen?", target: 4000 },
-            { display: "112 + 238 + 150", target: 500 }, { display: "920 - 475", target: 445 },
-            { display: "19 x 5", target: 95 }, { display: "490 : 7", target: 70 },
-            { display: "Ein Bauer packt 72 Eier in Schachteln à 6 Stück. Wie viele Schachteln braucht er?", target: 12 },
-            { display: "45 + 85 + 120 - 50", target: 200 }, { display: "612 - 348", target: 264 },
-            { display: "14 x 9", target: 126 }, { display: "720 : 9", target: 80 },
-            { display: "Tom hat 50 € und kauft ein Spiel für 34 €. Wie viel Wechselgeld bekommt er?", target: 16 },
-            { display: "215 + 385 + 100", target: 700 }, { display: "850 - 390", target: 460 },
-            { display: "16 x 7", target: 112 }, { display: "630 : 9", target: 70 },
-            { display: "Ein Zug hat 6 Waggons mit je 45 Sitzplätzen. Wie viele Plätze gibt es insgesamt?", target: 270 },
-            { display: "54 + 76 + 89 + 31", target: 250 }, { display: "743 - 298", target: 445 },
-            { display: "12 x 15", target: 180 }, { display: "960 : 8", target: 120 },
-            { display: "Lisa liest jeden Tag 12 Seiten in ihrem Buch. Wie viele Seiten schafft sie in einer Woche (7 Tage)?", target: 84 },
-            { display: "333 + 444 - 111", target: 666 }, { display: "900 - 543", target: 357 },
-            { display: "21 x 4", target: 84 }, { display: "750 : 5", target: 150 },
-            { display: "Ein Hufeisen wiegt 250 Gramm. Wie schwer sind 4 Hufeisen zusammen in Gramm?", target: 1000 },
-            { display: "88 + 92 + 105 + 15", target: 300 }, { display: "682 - 319", target: 363 },
-            { display: "25 x 6", target: 150 }, { display: "840 : 6", target: 140 },
-            { display: "In einer Schultasche sind 3 Hefte zu je 2 € und ein Stift für 4 €. Gesamtkosten?", target: 10 },
-            { display: "450 + 275 - 125", target: 600 }, { display: "1000 - 372", target: 628 },
-            { display: "18 x 7", target: 126 }, { display: "990 : 9", target: 110 },
-            { display: "Max hat 85 Bonbons und teilt sie an 5 Freunde auf. Wie viele bekommt jeder?", target: 17 },
-            { display: "123 + 456 + 221", target: 800 }, { display: "950 - 485", target: 465 },
-            { display: "22 x 5", target: 110 }, { display: "680 : 4", target: 170 },
-            { display: "Ein Bauer erntet 300 kg Kartoffeln und verkauft 180 kg. Wie viel kg bleiben übrig?", target: 120 },
-            { display: "140 + 260 + 150", target: 550 }, { display: "700 - 245", target: 455 },
-            { display: "11 x 11", target: 121 }, { display: "540 : 9", target: 60 },
-            { display: "Anna spart jede Woche 5 €. Wie viel hat sie nach einem halben Jahr (26 Wochen)?", target: 130 },
-            { display: "310 + 290 - 150", target: 450 }, { display: "850 - 410", target: 440 },
-            { display: "12 x 12", target: 144 }, { display: "600 : 5", target: 120 },
-            { display: "Ein Schulbus fährt morgens 15 km und nachmittags 15 km. Wie viel km an 5 Schultagen?", target: 150 },
-            { display: "175 + 225 + 300", target: 700 }, { display: "900 - 333", target: 567 },
-            { display: "13 x 7", target: 91 }, { display: "450 : 5", target: 90 },
-            { display: "Tom hat 4 Packungen Buntstifte mit je 12 Stiften. Wie viele Stifte sind das?", target: 48 },
-            { display: "220 + 330 + 110", target: 660 }, { display: "750 - 380", target: 370 },
-            { display: "14 x 8", target: 112 }, { display: "560 : 8", target: 70 },
-            { display: "Ein Kuchen wird in 12 Stücke geschnitten. 5 Stücke werden gegessen. Wie viele sind da?", target: 7 },
-            { display: "190 + 210 + 250", target: 650 }, { display: "820 - 390", target: 430 },
-            { display: "16 x 5", target: 80 }, { display: "720 : 6", target: 120 },
-            { display: "Ein Kino-Ticket kostet 9 €. Wie viel kosten 4 Tickets zusammen?", target: 36 },
-            { display: "300 + 400 - 150", target: 550 }, { display: "990 - 440", target: 550 },
-            { display: "15 x 6", target: 90 }, { display: "810 : 3", target: 270 },
-            { display: "Mia hat 72 Perlen und bastelt 6 gleich große Armbänder. Wie viele Perlen pro Armband?", target: 12 }
-        ];
-
         let activePathSteps = [];
         let currentPathIndex = 0;
         let currentGameKey = '';
@@ -1040,13 +1021,7 @@
         let isStrictDirectInputMode = false;
         let latestFinishedHorseLevel = 1;
         
-        let sessionStats = {
-            minutes: 0,
-            categories: new Set(),
-            totalAnswered: 0,
-            totalCorrect: 0
-        };
-
+        let sessionStats = { minutes: 0, categories: new Set(), totalAnswered: 0, totalCorrect: 0 };
         let globalTimeLeft = 0;
         let globalTimerInterval = null;
         let lastActivityTime = Date.now();
@@ -1160,7 +1135,6 @@
             alert("Prämien-Shop erfolgreich aktualisiert und sortiert!");
         }
 
-        // NEU: Hufeisen-Punkte manuell anpassen per Admin-PIN
         function adminEditHorseshoesDirectly() {
             let pin = prompt("Bitte Admin-PIN eingeben zum Bearbeiten des Hufeisen-Guthabens:");
             if (!checkPinWithLockdown(pin, "0307")) return;
@@ -1190,6 +1164,105 @@
             alert(`Hufeisen-Guthaben erfolgreich aktualisiert! Neuer Stand: ${totalHorseshoes} 🧲`);
         }
 
+        /* ADMIN MENÜ & FRAGEN-EDITOR */
+        function openAdminMenu() {
+            let pin = prompt("Bitte Admin-PIN eingeben:");
+            if (!checkPinWithLockdown(pin, "0307")) return;
+            showScreen('screen-admin-menu');
+        }
+
+        let currentEditorSubject = '';
+        function openQuestionEditorMenu() {
+            showScreen('screen-question-editor');
+        }
+
+        function loadEditorForCategory(subj) {
+            currentEditorSubject = subj;
+            document.getElementById('editor-list-title').innerText = `Fragen verwalten: ${subj}`;
+            renderEditorQuestionsList();
+            showScreen('screen-question-list');
+        }
+
+        function renderEditorQuestionsList() {
+            const container = document.getElementById('editor-questions-container');
+            if (!container) return;
+            container.innerHTML = '';
+            let questions = quizData[currentEditorSubject] || [];
+
+            if (questions.length === 0) {
+                container.innerHTML = `<p class="text-gray-400">Keine Fragen in diesem Fach vorhanden.</p>`;
+                return;
+            }
+
+            questions.forEach((q, idx) => {
+                let div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200 gap-2";
+                let qText = q.question || q.sentence || "Frage";
+                div.innerHTML = `
+                    <div class="truncate flex-1"><strong>${idx+1}.</strong> ${qText}</div>
+                    <div class="flex gap-1">
+                        <button onclick="editQuestion(${idx})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-[10px]">✏️</button>
+                        <button onclick="deleteQuestion(${idx})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addNewQuestionPrompt() {
+            let qText = prompt("Fragetext / Aufgabe eingeben:");
+            if (!qText) return;
+
+            let typeChoice = prompt("Fragetyp eingeben:\n1) Multiple Choice (Standard)\n2) Direkteingabe (Input)", "1");
+            if (typeChoice === "2") {
+                let correctAns = prompt("Richtige Antwort:");
+                if (!correctAns) return;
+                quizData[currentEditorSubject].push({ type: "input", question: qText, correct: correctAns, hint: "Eigene Frage" });
+            } else {
+                let opt1 = prompt("Option 1 (Richtig):");
+                let opt2 = prompt("Option 2 (Falsch):");
+                let opt3 = prompt("Option 3 (Falsch):", "Falsch 2");
+                let opt4 = prompt("Option 4 (Falsch):", "Falsch 3");
+                if (!opt1 || !opt2) return;
+                quizData[currentEditorSubject].push({ question: qText, options: [opt1, opt2, opt3, opt4], correct: 0, hint: "Eigene Frage" });
+            }
+            saveQuizData();
+            renderEditorQuestionsList();
+            alert("Neue Frage erfolgreich hinzugefügt!");
+        }
+
+        function editQuestion(idx) {
+            let q = quizData[currentEditorSubject][idx];
+            let newText = prompt("Fragetext bearbeiten:", q.question || q.sentence);
+            if (newText === null) return;
+            if (q.question) q.question = newText;
+            else if (q.sentence) q.sentence = newText;
+
+            if (q.options && q.options.length > 0) {
+                let newCorrectOpt = prompt(`Richtige Antwort (Option A war: ${q.options[q.correct]}):`, q.options[q.correct]);
+                if (newCorrectOpt !== null) {
+                    q.options[0] = newCorrectOpt;
+                    q.correct = 0;
+                }
+            } else if (q.correct !== undefined) {
+                let newAns = prompt("Richtige Antwort:", q.correct);
+                if (newAns !== null) q.correct = newAns;
+            }
+
+            saveQuizData();
+            renderEditorQuestionsList();
+            alert("Frage aktualisiert!");
+        }
+
+        function deleteQuestion(idx) {
+            if (confirm("Möchtest du diese Frage wirklich löschen?")) {
+                quizData[currentEditorSubject].splice(idx, 1);
+                saveQuizData();
+                renderEditorQuestionsList();
+                alert("Frage gelöscht!");
+            }
+        }
+
         /* ADMIN PRÜFUNGS-BEREICH & 1-MAL-AM-TAG SPERRE */
         function openAdminExam() {
             let pin = prompt("Bitte Admin-PIN eingeben für den Prüfungs-Bereich:");
@@ -1197,7 +1270,6 @@
 
             const listEl = document.getElementById('admin-exam-list');
             listEl.innerHTML = '';
-
             let savedIndices = JSON.parse(localStorage.getItem('custom_exam_indices') || '[]');
 
             for (let subj in quizData) {
@@ -1322,6 +1394,7 @@
                 custom_rewards_list: localStorage.getItem('custom_rewards_list'),
                 horse_level_dates: localStorage.getItem('horse_level_dates'),
                 custom_exam_indices: localStorage.getItem('custom_exam_indices'),
+                custom_quiz_data: localStorage.getItem('custom_quiz_data'),
                 last_exam_date: localStorage.getItem('last_exam_date')
             };
             return btoa(encodeURIComponent(JSON.stringify(backupData)));
@@ -1372,6 +1445,7 @@
                 if (backupData.custom_rewards_list !== undefined) localStorage.setItem('custom_rewards_list', backupData.custom_rewards_list);
                 if (backupData.horse_level_dates !== undefined) localStorage.setItem('horse_level_dates', backupData.horse_level_dates);
                 if (backupData.custom_exam_indices !== undefined) localStorage.setItem('custom_exam_indices', backupData.custom_exam_indices);
+                if (backupData.custom_quiz_data !== undefined) localStorage.setItem('custom_quiz_data', backupData.custom_quiz_data);
                 if (backupData.last_exam_date !== undefined) localStorage.setItem('last_exam_date', backupData.last_exam_date);
 
                 alert("Stand erfolgreich wiederhergestellt! Die App wird aktualisiert.");
@@ -1452,7 +1526,7 @@
         };
 
         function showLockdownScreen() {
-            const screens = ['screen-home', 'screen-challenge-select', 'screen-quiz', 'screen-path', 'screen-result', 'screen-cert-box', 'screen-horseshoe-box', 'screen-admin-exam'];
+            const screens = ['screen-home', 'screen-challenge-select', 'screen-quiz', 'screen-path', 'screen-result', 'screen-cert-box', 'screen-horseshoe-box', 'screen-admin-exam', 'screen-admin-menu', 'screen-question-editor', 'screen-question-list'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2111,7 +2185,7 @@
         }
 
         function showScreen(screenId) {
-            const screens = ['screen-home', 'screen-challenge-select', 'screen-quiz', 'screen-path', 'screen-result', 'screen-cert-box', 'screen-horseshoe-box', 'screen-lockdown', 'screen-admin-exam'];
+            const screens = ['screen-home', 'screen-challenge-select', 'screen-quiz', 'screen-path', 'screen-result', 'screen-cert-box', 'screen-horseshoe-box', 'screen-lockdown', 'screen-admin-exam', 'screen-admin-menu', 'screen-question-editor', 'screen-question-list'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2423,6 +2497,7 @@
                                        currentQ.question.includes("ml") || 
                                        currentQ.question.includes("Liter") || 
                                        (currentQ.options && currentQ.options.some(opt => opt.includes("€") || opt.includes("g") || opt.includes("m") || opt.includes("l") || opt.includes("Cent")));
+
                 isInputType = isStrictDirectInputMode || !isTextOrUnitTask;
                 inputLabel.innerText = "Trage das Ergebnis selbst ein:";
                 if (currentQ.options) {
@@ -2557,7 +2632,6 @@
             document.getElementById('not-reached-actions').classList.add('hidden');
         }
 
-        // NEU: Prüfungsergebnis mit Hufeisen-Berechnung (>= 50% = +30 Hufeisen, < 50% = -20 Hufeisen)
         function showExamResult() {
             showScreen('screen-result');
             document.getElementById('btn-print-certificate').classList.add('hidden');
@@ -2837,7 +2911,6 @@
                 certBtn.classList.remove('hidden');
                 document.getElementById('not-reached-actions').classList.add('hidden');
                 document.getElementById('penalty-notice').classList.add('hidden');
-                document.getElementById('cert-btn-text').innerText = `Urkunde für Level ${latestFinishedHorseLevel} drucken`;
             }
         }
 
