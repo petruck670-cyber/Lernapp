@@ -561,7 +561,7 @@
                 { type: "choice", question: "Welches Wort schreibt man mit Doppel-s (ss)?", options: ["Schlo__", "Stra__e", "Gro__", "Fren__"], correct: 0, hint: "Nach kurzem Selbstlaut." },
                 { type: "choice", question: "Was gehört zwingend zur wörtlichen Rede?", options: ["Fragezeichen", "Anführungszeichen", "Ausrufezeichen", "Klammern"], correct: 1, hint: "Gänsefüßchen." },
                 { type: "choice", question: "Welches Wort ist eine Konjunktion (Bindewort)?", options: ["weil", "Hund", "rennen", "schön"], correct: 0, hint: "Verbindet Sätze." },
-                { type: "choice", question: "Welches dieser Wörter ist KEIN Adjektiv?", options: ["Laufen", "schnell", "bunt", "klug"], correct: 0, hint: "Das ist ein Verb." },
+                { type: "choice", question: "Welches dieser Wörter is KEIN Adjektiv?", options: ["Laufen", "schnell", "bunt", "klug"], correct: 0, hint: "Das ist ein Verb." },
                 { type: "choice", question: "Wie lautet die Mehrzahl von 'Museum'?", options: ["Museums", "Museen", "Musee", "Museener"], correct: 1, hint: "Unregelmäßige Mehrzahl auf -en." },
                 { type: "choice", question: "Wie lautet die Mehrzahl von 'Satz'?", options: ["Sätze", "Satze", "Satzes", "Sätze"], correct: 0, hint: "Mit Umlaut." },
                 { type: "choice", question: "Welcher Fall (Kasus) ist der 4. Fall?", options: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"], correct: 3, hint: "Wen-Fall." },
@@ -793,7 +793,7 @@
         ];
 
         let activePathSteps = []; let currentPathIndex = 0; let currentGameKey = ''; let currentHorseLevel = 0; let totalHorseshoes = 0; let rallyCurrentIndex = 0; let shuffledRallySteps = []; let wrongPinCount = 0;
-        let activeQuestions = []; let currentSubject = ''; let currentQuestionIndex = 0; let isTestModeActive = false; let isStrictDirectInputMode = false; let latestFinishedHorseLevel = 1;
+        let activeQuestions = []; let currentSubject = ''; let currentEditorSubject = ''; let currentQuestionIndex = 0; let isTestModeActive = false; let isStrictDirectInputMode = false; let latestFinishedHorseLevel = 1;
         let sessionStats = { minutes: 0, categories: new Set(), totalAnswered: 0, totalCorrect: 0 };
         let globalTimeLeft = 0; let globalTimerInterval = null; let lastActivityTime = Date.now(); let isPausedByInactivity = false; let isSessionActive = false; let activeSessionMinutes = 0;
         let isChallengeMode = false; let currentChallengeLevel = 1; let challengeErrorsCount = 0; let challengeCorrectCount = 0; let challengeJokersLeft = 3; let isJokerActive = false; let isPromptActive = false; let isExamMode = false;
@@ -1008,23 +1008,69 @@
         function addNewQuestionPrompt() {
             let qText = prompt("Fragetext / Aufgabe eingeben:");
             if (!qText) return;
-            let typeChoice = prompt("Typ:\n1) Multiple Choice\n2) Direkteingabe", "1");
+            let typeChoice = prompt("Typ:\n1) Multiple Choice (4 Antworten)\n2) Direkteingabe (Text/Zahl)", "1");
             if (typeChoice === "2") {
                 let correctAns = prompt("Richtige Antwort:");
-                if (correctAns) quizData[currentEditorSubject].push({ type: "input", question: qText, correct: correctAns });
+                let hintText = prompt("Optionaler Rechen-Tipp:", "");
+                if (correctAns) {
+                    quizData[currentEditorSubject].push({ type: "input", question: qText, correct: correctAns, hint: hintText });
+                    saveQuizData();
+                    loadEditorForCategory(currentEditorSubject);
+                    alert("Neue Direkteingabe-Frage hinzugefügt!");
+                }
             } else {
-                let o1 = prompt("Option 1 (Richtig):"); let o2 = prompt("Option 2 (Falsch):");
-                if (o1 && o2) quizData[currentEditorSubject].push({ question: qText, options: [o1, o2, "Falsch 2", "Falsch 3"], correct: 0 });
+                let correctOpt = prompt("Richtige Antwort (Option 1):");
+                let wrong1 = prompt("Falsche Antwort 1:");
+                let wrong2 = prompt("Falsche Antwort 2:");
+                let wrong3 = prompt("Falsche Antwort 3:");
+                let hintText = prompt("Optionaler Rechen-Tipp:", "");
+
+                if (correctOpt && wrong1 && wrong2 && wrong3) {
+                    quizData[currentEditorSubject].push({
+                        question: qText,
+                        options: [correctOpt, wrong1, wrong2, wrong3],
+                        correct: 0,
+                        hint: hintText
+                    });
+                    saveQuizData();
+                    loadEditorForCategory(currentEditorSubject);
+                    alert("Neue Multiple-Choice-Frage mit 4 Antworten hinzugefügt!");
+                } else {
+                    alert("Bitte alle 4 Antwortfelder ausfüllen!");
+                }
             }
-            saveQuizData(); loadEditorForCategory(currentEditorSubject); alert("Hinzugefügt!");
         }
         function editQuestion(idx) {
             let q = quizData[currentEditorSubject][idx];
-            let newText = prompt("Text bearbeiten:", q.question || q.sentence);
-            if (newText) {
-                if (q.question) q.question = newText; else q.sentence = newText;
-                saveQuizData(); renderEditorQuestionsList(); alert("Aktualisiert!");
+            let isInput = (q.type === 'input' || q.type === 'error_hunt' || !q.options);
+            
+            let newText = prompt("Fragetext bearbeiten:", q.question || q.sentence);
+            if (newText === null) return;
+
+            if (q.question) q.question = newText; 
+            if (q.sentence) q.sentence = newText;
+
+            if (isInput) {
+                let newCorrect = prompt("Richtige Antwort anpassen:", q.correct || "");
+                if (newCorrect !== null) q.correct = newCorrect;
+            } else {
+                let optCorrect = prompt("Richtige Antwort (Option 1):", q.options[0]);
+                let optW1 = prompt("Falsche Antwort 1:", q.options[1]);
+                let optW2 = prompt("Falsche Antwort 2:", q.options[2]);
+                let optW3 = prompt("Falsche Antwort 3:", q.options[3]);
+
+                if (optCorrect !== null && optW1 !== null && optW2 !== null && optW3 !== null) {
+                    q.options = [optCorrect, optW1, optW2, optW3];
+                    q.correct = 0;
+                }
             }
+
+            let newHint = prompt("Rechen-Tipp anpassen:", q.hint || "");
+            if (newHint !== null) q.hint = newHint;
+
+            saveQuizData();
+            renderEditorQuestionsList();
+            alert("Frage und Antworten erfolgreich aktualisiert!");
         }
         function deleteQuestion(idx) {
             if (confirm("Wirklich löschen?")) { quizData[currentEditorSubject].splice(idx, 1); saveQuizData(); renderEditorQuestionsList(); }
@@ -1115,8 +1161,13 @@
         };
 
         function showLockdownScreen() {
-            document.querySelectorAll('div[id^="screen-"]').forEach(el => { el.classList.add('hidden'); el.style.display = 'none'; });
-            document.getElementById('screen-lockdown').classList.remove('hidden'); document.getElementById('screen-lockdown').style.display = 'flex';
+            document.querySelectorAll('div[id^="screen-"]').forEach(el => { el.classList.add('hidden'); el.style.display = 'none'; el.style.opacity = '0'; });
+            let lockdownEl = document.getElementById('screen-lockdown');
+            if (lockdownEl) {
+                lockdownEl.classList.remove('hidden');
+                lockdownEl.style.display = 'flex';
+                setTimeout(() => { lockdownEl.style.opacity = '1'; }, 10);
+            }
         }
 
         function unlockApp() {
@@ -1412,10 +1463,29 @@
 
         function showScreen(screenId) {
             const screens = ['screen-home', 'screen-challenge-select', 'screen-quiz', 'screen-path', 'screen-result', 'screen-cert-box', 'screen-horseshoe-box', 'screen-lockdown', 'screen-admin-exam', 'screen-admin-menu', 'screen-question-editor', 'screen-question-list'];
-            screens.forEach(id => { let el = document.getElementById(id); if (el) { el.classList.add('hidden'); el.style.display = 'none'; } });
+            
+            screens.forEach(id => { 
+                let el = document.getElementById(id); 
+                if (el) { 
+                    el.classList.add('hidden'); 
+                    el.style.display = 'none'; 
+                    el.style.opacity = '0';
+                } 
+            });
+
             let activeEl = document.getElementById(screenId);
-            if (activeEl) { activeEl.classList.remove('hidden'); activeEl.style.display = (screenId === 'screen-lockdown') ? 'flex' : 'block'; }
-            if (screenId === 'screen-home') { initLogTable(); initSessionLogTable(); updateChallengeMenuDisplay(); updateHorseshoeDisplay(); }
+            if (activeEl) { 
+                activeEl.classList.remove('hidden'); 
+                activeEl.style.display = (screenId === 'screen-lockdown') ? 'flex' : 'block'; 
+                setTimeout(() => { activeEl.style.opacity = '1'; }, 10);
+            }
+
+            if (screenId === 'screen-home') { 
+                initLogTable(); 
+                initSessionLogTable(); 
+                updateChallengeMenuDisplay(); 
+                updateHorseshoeDisplay(); 
+            }
             window.scrollTo(0, 0);
         }
 
