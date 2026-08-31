@@ -54,15 +54,31 @@
                     if (cloudData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(cloudData.horse_level_dates));
                     if (cloudData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(cloudData.challenge_progress));
                     if (cloudData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(cloudData.custom_exam_indices));
+                    if (cloudData.custom_learning_session_indices) localStorage.setItem('custom_learning_session_indices', JSON.stringify(cloudData.custom_learning_session_indices));
                     if (cloudData.last_exam_date) localStorage.setItem('last_exam_date', cloudData.last_exam_date);
                     if (cloudData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(cloudData.custom_quiz_data));
                     if (cloudData.session_target_correct !== undefined) localStorage.setItem('session_target_correct', cloudData.session_target_correct);
+                    
+                    if (cloudData.help_request_status !== undefined) {
+                        let localStatus = localStorage.getItem('help_request_status');
+                        if (localStatus !== 'none') {
+                            localStorage.setItem('help_request_status', cloudData.help_request_status);
+                        }
+                        if (localStorage.getItem('help_request_status') === 'pending') window.hasRetriedOnce = true;
+                    }
+                    if (cloudData.pending_correct_count !== undefined && !localStorage.getItem('pending_correct_count')) {
+                        localStorage.setItem('pending_correct_count', cloudData.pending_correct_count);
+                    }
+                    if (cloudData.pending_total_count !== undefined && !localStorage.getItem('pending_total_count')) {
+                        localStorage.setItem('pending_total_count', cloudData.pending_total_count);
+                    }
                     
                     if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                     if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
                     if (typeof initLogTable === 'function') initLogTable();
                     if (typeof initSessionLogTable === 'function') initSessionLogTable();
                     if (typeof updateChallengeMenuDisplay === 'function') updateChallengeMenuDisplay();
+                    if (typeof checkHelpRequestUI === 'function') checkHelpRequestUI();
                     isUpdatingFromRemote = false;
                 }
             } catch (e) { console.log("Ladefehler aus Cloud", e); }
@@ -83,9 +99,13 @@
                     horse_level_dates: JSON.parse(localStorage.getItem('horse_level_dates') || '{}'),
                     challenge_progress: JSON.parse(localStorage.getItem('challenge_progress') || 'null'),
                     custom_exam_indices: JSON.parse(localStorage.getItem('custom_exam_indices') || '[]'),
+                    custom_learning_session_indices: JSON.parse(localStorage.getItem('custom_learning_session_indices') || '[]'),
                     last_exam_date: localStorage.getItem('last_exam_date') || '',
                     custom_quiz_data: JSON.parse(localStorage.getItem('custom_quiz_data') || 'null'),
-                    session_target_correct: localStorage.getItem('session_target_correct') || '16'
+                    session_target_correct: localStorage.getItem('session_target_correct') || '16',
+                    help_request_status: localStorage.getItem('help_request_status') || 'none',
+                    pending_correct_count: localStorage.getItem('pending_correct_count') || '0',
+                    pending_total_count: localStorage.getItem('pending_total_count') || '0'
                 };
                 await setDoc(docRef, cloudPayload);
                 if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
@@ -105,15 +125,31 @@
                 if (remoteData.horse_level_dates) localStorage.setItem('horse_level_dates', JSON.stringify(remoteData.horse_level_dates));
                 if (remoteData.challenge_progress) localStorage.setItem('challenge_progress', JSON.stringify(remoteData.challenge_progress));
                 if (remoteData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(remoteData.custom_exam_indices));
+                if (remoteData.custom_learning_session_indices) localStorage.setItem('custom_learning_session_indices', JSON.stringify(remoteData.custom_learning_session_indices));
                 if (remoteData.last_exam_date) localStorage.setItem('last_exam_date', remoteData.last_exam_date);
                 if (remoteData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(remoteData.custom_quiz_data));
                 if (remoteData.session_target_correct !== undefined) localStorage.setItem('session_target_correct', remoteData.session_target_correct);
+                
+                let localStatus = localStorage.getItem('help_request_status');
+                if (remoteData.help_request_status !== undefined && localStatus !== 'none') {
+                    if (localStatus !== 'pending') {
+                        localStorage.setItem('help_request_status', remoteData.help_request_status);
+                    }
+                    if (localStorage.getItem('help_request_status') === 'pending') window.hasRetriedOnce = true;
+                }
+                if (remoteData.pending_correct_count !== undefined && !localStorage.getItem('pending_correct_count')) {
+                    localStorage.setItem('pending_correct_count', remoteData.pending_correct_count);
+                }
+                if (remoteData.pending_total_count !== undefined && !localStorage.getItem('pending_total_count')) {
+                    localStorage.setItem('pending_total_count', remoteData.pending_total_count);
+                }
 
                 if (typeof updateHorseshoeDisplay === 'function') updateHorseshoeDisplay();
                 if (typeof renderRewardsListDisplay === 'function') renderRewardsListDisplay();
                 if (typeof initLogTable === 'function') initLogTable();
                 if (typeof initSessionLogTable === 'function') initSessionLogTable();
                 if (typeof updateChallengeMenuDisplay === 'function') updateChallengeMenuDisplay();
+                if (typeof checkHelpRequestUI === 'function') checkHelpRequestUI();
                 isUpdatingFromRemote = false;
             }
         });
@@ -168,9 +204,17 @@
                     <span id="home-timer-display" class="bg-white text-indigo-700 font-mono font-bold px-2.5 py-1 rounded-lg border border-indigo-200 text-sm hidden">--:--</span>
                 </div>
                 <div class="flex gap-3 mb-3">
-                    <button onclick="startGlobalSession(15)" class="w-1/2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-2 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-1"><span>🟢</span> <span>15 Min</span></button>
+                    <button onclick="startGlobalSession()" class="w-1/2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-2 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-1"><span>🟢</span> <span>Lernzeit</span></button>
                     <button onclick="startCustomSession()" class="w-1/2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-2 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-1"><span>🔴</span> <span>Individuell / Test</span></button>
                 </div>
+                
+                <!-- Admin-Prüfen Button im Hauptmenü (dauerhaft da, blinkt nur, wenn status == 'pending') -->
+                <div id="admin-main-help-container" class="mb-3">
+                    <button id="main-help-btn" onclick="checkAdminHelpRequestFromHome()" class="w-full bg-gray-200 text-gray-500 font-bold py-2.5 px-4 rounded-xl shadow transition text-xs flex items-center justify-center gap-1 cursor-not-allowed" disabled>
+                        🔔 Keine offene Hilfe-Anfrage
+                    </button>
+                </div>
+
                 <div class="pt-2 border-t border-indigo-200 flex gap-2">
                     <button onclick="startCustomExam()" class="w-2/4 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1"><span>📝</span> <span>Prüfung starten</span></button>
                     <button onclick="resetExamLimit()" title="Prüfungs-Sperre aufheben (Admin-PIN)" class="w-1/4 bg-red-100 hover:bg-red-200 text-red-800 font-bold py-2.5 px-1 rounded-xl transition text-[10px] flex items-center justify-center gap-0.5"><span>🔄 Reset</span></button>
@@ -282,6 +326,7 @@
             </div>
             <div class="space-y-3">
                 <button onclick="openAdminExam()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">📝 Prüfungsfragen auswählen</button>
+                <button onclick="openAdminLearningSession()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">⏱️ Lernzeit-Fragen auswählen</button>
                 <button onclick="openQuestionEditorMenu()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">✏️ Fragen bearbeiten & hinzufügen</button>
                 <button onclick="adminEditSessionTarget()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">🎯 Benötigte Richtige anpassen (Ziel)</button>
             </div>
@@ -311,10 +356,10 @@
             <div id="editor-questions-container" class="bg-white border-2 border-indigo-200 p-3 rounded-2xl mb-4 text-left max-h-72 overflow-y-auto space-y-2 text-xs"></div>
         </div>
 
-        <!-- PRÜFUNGS-AUSWAHL -->
+        <!-- PRÜFUNGS- / LERNZEIT-AUSWAHL -->
         <div id="screen-admin-exam" class="p-6 text-center hidden">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-black text-amber-700">⚙️ Prüfungsfragen</h2>
+                <h2 id="admin-list-title" class="text-xl font-black text-amber-700">⚙️ Fragen verwalten</h2>
                 <button onclick="returnToMenu()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-1 px-3 rounded-lg transition">🏠 Hauptmenü</button>
             </div>
             <div class="flex gap-2 mb-3">
@@ -322,7 +367,7 @@
                 <button onclick="selectAllExam(false)" class="w-1/2 bg-gray-100 text-gray-700 font-bold py-1.5 px-2 rounded-xl text-xs transition">Alle abwählen</button>
             </div>
             <div id="admin-exam-list" class="bg-white border-2 border-amber-200 p-3 rounded-2xl mb-4 text-left max-h-72 overflow-y-auto space-y-3 text-xs"></div>
-            <button onclick="saveAdminExamSelection()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">💾 Auswahl speichern</button>
+            <button id="btn-save-admin-selection" onclick="saveAdminExamSelection()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm">💾 Auswahl speichern</button>
         </div>
 
         <!-- Hufeisen-Box -->
@@ -442,8 +487,12 @@
                 <p>✅ <strong>Richtig:</strong> <span id="res-correct" class="text-green-600 font-bold">0</span></p>
                 <div id="penalty-notice" class="hidden mt-2 pt-2 border-t border-red-200 text-red-700 font-bold text-xs">⚠️ Teilnehmer hat sich entschieden für: ab 20 Uhr Handy- und PC-Verbot</div>
             </div>
-            <div id="not-reached-actions" class="space-y-2 mb-4 hidden">
-                <button onclick="continueUntilTarget()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">🔄 Erneut versuchen (Weiterspielen bis Ziel)</button>
+            <div id="not-reached-actions" class="space-y-3 mb-4 hidden">
+                <button id="btn-retry-session" onclick="continueFailedSession()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">🔄 Weitermachen (Falsche Fragen wiederholen)</button>
+                
+                <!-- Hilfe anfordern Button -->
+                <button id="btn-request-help" onclick="requestAdminHelp()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm hidden">🆘 Bei Admin nach Hilfe fragen</button>
+                
                 <button onclick="choosePenaltyBan()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition text-sm">🚫 20 Uhr Handy- und PC-Verbot</button>
             </div>
             <button id="btn-print-certificate" onclick="printHorseCertificate(latestFinishedHorseLevel)" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition mb-3 hidden">🖨️ Urkunde drucken</button>
@@ -670,7 +719,7 @@
                 { question: "Welches Sinnesorgan nutzen wir zum Hören?", options: ["Ohr", "Auge", "Nase", "Haut"], correct: 0, hint: "Nimmt Schallwellen wahr." },
                 { question: "Welche Tiere gehören zu den Amphibien?", options: ["Frösche", "Hunde", "Fische", "Vögel"], correct: 0, hint: "Leben an Land und im Wasser." },
                 { question: "Wie nennt man die Schicht aus Gasen, die die Erde umgibt?", options: ["Atmosphäre", "Lithosphäre", "Hydrosphäre", "Biosphäre"], correct: 0, hint: "Die Lufthülle." },
-                { question: "Welche Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
+                { question: "Какие Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
                 { question: "Welcher Monat hat normalerweise die wenigsten Tage?", options: ["Februar", "Januar", "April", "Dezember"], correct: 0, hint: "Hat nur 28 oder 29 Tage." },
                 { question: "Welches ist das leichteste chemische Element im Universum?", options: ["Wasserstoff", "Sauerstoff", "Helium", "Kohlenstoff"], correct: 0, hint: "H." }
             ],
@@ -688,7 +737,7 @@
                 { type: "choice", question: "Welches Organ in unserem Kopf steuert den ganzen Körper?", options: ["Das Herz", "Die Lunge", "Das Gehirn", "Der Magen"], correct: 2, hint: "Unser Denkorgan." },
                 { type: "input", question: "Wie heißt der grünen Farbstoff in Pflanzen, mit dem sie Sonnenlicht tanken? Chloro...", correct: "ophyll", alt: "ophyll", hint: "Chlorophyll." },
                 { type: "choice", question: "Wie viele Zähne hat ein erwachsener Mensch (mit Weisheitszähnen)?", options: ["24", "28", "32", "36"], correct: 2, hint: "Genau 32 Stück." },
-                { type: "input", question: "Welche Farbe hat saubere Luft zum Atmen?", correct: "farblos", alt: "durchsichtig", hint: "Man sieht sie nicht." },
+                { type: "input", question: "Какие Farbe hat saubere Luft zum Atmen?", correct: "farblos", alt: "durchsichtig", hint: "Man sieht sie nicht." },
                 { type: "choice", question: "Was passiert mit Wasser, wenn es sprudelnd kocht?", options: ["Es friert", "Es verdunstet", "Es wird zu Stein", "Es verschwindet für immer"], correct: 1, hint: "Es steigt als Dampf auf." },
                 { type: "input", question: "Wie heißt das größte Organ unseres Körpers, das uns schützt?", correct: "Haut", alt: "haut", hint: "Hüllt uns komplett ein." },
                 { type: "choice", question: "Welcher Nadelbaum in deutschen Wäldern verliert im Herbst seine Nadeln?", options: ["Tanne", "Fichte", "Lärche", "Kiefer"], correct: 2, hint: "Die Lärche." },
@@ -703,10 +752,10 @@
                 { type: "input", question: "Wie viele Monate hat ein ganzes Jahr?", correct: "12", alt: "zwölf", hint: "Von Januar bis Dezember." },
                 { type: "choice", question: "Welche Nachbarländer hat Deutschland (die direkt an unsere Grenzen stoßen)?", options: ["5", "7", "9", "11"], correct: 2, hint: "Genau 9 Nachbarn." },
                 { type: "input", question: "Wie heißt die berühmte Hansestadt im Norden Deutschlands mit einem riesigen Hafen?", correct: "Hamburg", alt: "hamburg", hint: "Freie und Hansestadt Hamburg." },
-                { type: "choice", question: "Welche Farben hat die Flagge unseres Bundeslandes (Baden-Württemberg)?", options: ["Schwarz-Rot-Gold", "Schwarz-Gold", "Blau-Weiß", "Rot-Weiß"], correct: 1, hint: "Schwarz-Gold." },
+                { type: "choice", question: "Какие Farben hat die Flagge unseres Bundeslandes (Baden-Württemberg)?", options: ["Schwarz-Rot-Gold", "Schwarz-Gold", "Blau-Weiß", "Rot-Weiß"], correct: 1, hint: "Schwarz-Gold." },
                 { type: "input", question: "Wie heißt das Parlament in Berlin, in dem die deutschen Politiker tagen?", correct: "Bundestag", alt: "bundestag", hint: "Der Bundestag." },
                 { type: "choice", question: "Welches heimische Waldtier hat ein Geweih, das jedes Jahr abfällt und neu wächst?", options: ["Wildschwein", "Hirsch", "Fuchs", "Dachs"], correct: 1, hint: "Der Hirsch." },
-                { type: "input", question: "Welche Farbe hat normale Kuhmilch im Tetra Pak?", correct: "weiß", alt: "weiss", hint: "Die klassische Milchfarbe." },
+                { type: "input", question: "Какие Farbe hat normale Kuhmilch im Tetra Pak?", correct: "weiß", alt: "weiss", hint: "Die klassische Milchfarbe." },
                 { type: "choice", question: "Wie viele Minuten hat eine Stunde?", options: ["30", "45", "60", "100"], correct: 2, hint: "Genau 60 Minuten." },
                 { type: "input", question: "Wie heißt das Werkzeug, mit dem man Nägel in die Wand schlägt?", correct: "Hammer", alt: "hammer", hint: "Ein schwerer Stiel mit Kopf." },
                 { type: "choice", question: "Was braucht man, um ein Bild mit Wasserfarben zu malen?", options: ["Wasserfarben und Pinsel", "Nagellack", "Kleber", "Kreppband"], correct: 0, hint: "Farbe und Pinsel." },
@@ -714,7 +763,7 @@
                 { type: "choice", question: "Wie viele Jahreszeiten hat Deutschland?", options: ["2", "3", "4", "6"], correct: 2, hint: "Frühling, Sommer, Herbst, Winter." },
                 { type: "input", question: "Aus welchem wertvollen gelben Edelmetall werden Ringe hergestellt?", correct: "Gold", alt: "gold", hint: "Glänzt gelb." },
                 { type: "choice", question: "Wie viele Tage hat eine normale Woche?", options: ["5", "6", "7", "10"], correct: 2, hint: "Von Montag bis Sonntag." },
-                { type: "input", question: "Wie nennt man Wassertropfen, die morgens auf dem Gras liegen?", correct: "Tau", alt: "tau", hint: "Ein kurzes Wort mit T." },
+                { type: "input", question: "Как nennt man Wassertropfen, die morgens auf dem Gras liegen?", correct: "Tau", alt: "tau", hint: "Ein kurzes Wort mit T." },
                 { type: "choice", question: "Wer erfindet in Geschichten oft tolle, verrückte Maschinen?", options: ["Koch", "Erfinder", "Gärtner", "Maler"], correct: 1, hint: "Ein Erfinder." },
                 { type: "input", question: "Wie viele Sekunden hat eine Minute?", correct: "60", alt: "sechzig", hint: "Genau 60 Sekunden." },
                 { type: "choice", question: "Was ist das Lieblingsfutter von Eichhörnchen im deutschen Wald?", options: ["Gras", "Nüsse und Eicheln", "Fleisch", "Würmer"], correct: 1, hint: "Knackige Nüsse." },
@@ -732,9 +781,9 @@
                 { type: "choice", question: "Welches ist das beliebteste Haustier der Deutschen (nach Anzahl in den Haushalten)?", options: ["Hund", "Katze", "Wellensittich", "Goldhamster"], correct: 1, hint: "Die Katze." },
                 { type: "input", question: "Wie viele Tage hat der Monat Februar in einem normalen Jahr?", correct: "28", alt: "achtundzwanzig", hint: "Weniger als alle anderen." },
                 { type: "choice", question: "Какие Telefonnummer wählt man in Deutschland im Notfall für Feuerwehr und Rettungsdienst?", options: ["110", "112", "115", "911"], correct: 1, hint: "Die europaweite 112." },
-                { type: "input", question: "Welche Farbe hat eine reife, süße Banane?", correct: "gelb", alt: "gelb", hint: "Die Sonnenfarbe." },
+                { type: "choice", question: "Какие Farbe hat eine reife, süße Banane?", correct: "gelb", alt: "gelb", hint: "Die Sonnenfarbe." },
                 { type: "choice", question: "Wie viele Himmelsrichtungen gibt es bei 'Nie Ohne Seife Waschen'?", options: ["2", "3", "4", "8"], correct: 2, hint: "Genau 4 Richtungen." },
-                { type: "input", question: "Wie nennt man das männliche, erwachsene Pferd?", correct: "Hengst", alt: "hengst", hint: "Männliches Pferd." }
+                { type: "input", question: "Как nennt man das männliche, erwachsene Pferd?", correct: "Hengst", alt: "hengst", hint: "Männliches Pferd." }
             ]
         };
 
@@ -798,6 +847,13 @@
         let globalTimeLeft = 0; let globalTimerInterval = null; let lastActivityTime = Date.now(); let isPausedByInactivity = false; let isSessionActive = false; let activeSessionMinutes = 0;
         let isChallengeMode = false; let currentChallengeLevel = 1; let challengeErrorsCount = 0; let challengeCorrectCount = 0; let challengeJokersLeft = 3; let isJokerActive = false; let isPromptActive = false; let isExamMode = false;
         let isAppPausedForCall = false; let callPauseStartTime = null;
+
+        let activeSessionMode = false;
+        let sessionSelectedQuestions = [];
+        let sessionCorrectCount = 0;
+        let sessionTotalQuestions = 0;
+        let isRetryRoundActive = false;
+        let hasRetriedOnce = false;
 
         let defaultRewards = [
             { cost: 300, text: "2 €" }, { cost: 500, text: "7 Tage ohne Lernzeit 🛌" }, { cost: 800, text: "14 Tage ohne Lernzeit 🛌" }, { cost: 1000, text: "10 € Roblox-Karte 🎮" }, { cost: 1300, text: "15 € Roblox-Karte 🎮" }
@@ -910,6 +966,7 @@
         function openAdminExam() {
             const listEl = document.getElementById('admin-exam-list');
             listEl.innerHTML = '';
+            document.getElementById('admin-list-title').innerText = "⚙️ Prüfungsfragen auswählen";
             let savedIndices = JSON.parse(localStorage.getItem('custom_exam_indices') || '[]');
             for (let subj in quizData) {
                 let header = document.createElement('div');
@@ -925,16 +982,56 @@
                     listEl.appendChild(label);
                 });
             }
+            let saveBtn = document.getElementById('btn-save-admin-selection');
+            saveBtn.onclick = saveAdminExamSelection;
+            saveBtn.className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm";
+            saveBtn.innerText = "💾 Prüfungs-Auswahl speichern";
+            showScreen('screen-admin-exam');
+        }
+
+        function openAdminLearningSession() {
+            const listEl = document.getElementById('admin-exam-list');
+            listEl.innerHTML = '';
+            document.getElementById('admin-list-title').innerText = "⚙️ Lernzeit-Fragen auswählen";
+            let savedIndices = JSON.parse(localStorage.getItem('custom_learning_session_indices') || '[]');
+            for (let subj in quizData) {
+                let header = document.createElement('div');
+                header.className = "font-bold text-green-900 bg-green-50 p-2 rounded-lg mt-2 mb-1";
+                header.innerText = `📂 Fach: ${subj} (${quizData[subj].length} Fragen)`;
+                listEl.appendChild(header);
+                quizData[subj].forEach((q, qIdx) => {
+                    let uniqueId = `${subj}_${qIdx}`;
+                    let isChecked = savedIndices.includes(uniqueId);
+                    let label = document.createElement('label');
+                    label.className = "flex items-start gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100";
+                    label.innerHTML = `<input type="checkbox" value="${uniqueId}" ${isChecked ? 'checked' : ''} class="mt-0.5 h-4 w-4 text-green-600 rounded"><div><span class="font-semibold text-gray-700">[${subj}]</span> <span class="text-gray-900">${q.question || q.sentence}</span></div>`;
+                    listEl.appendChild(label);
+                });
+            }
+            let saveBtn = document.getElementById('btn-save-admin-selection');
+            saveBtn.onclick = saveAdminLearningSessionSelection;
+            saveBtn.className = "w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow transition text-sm";
+            saveBtn.innerText = "💾 Lernzeit-Auswahl speichern";
             showScreen('screen-admin-exam');
         }
 
         function selectAllExam(select) { document.querySelectorAll('#admin-exam-list input[type="checkbox"]').forEach(cb => cb.checked = select); }
+        
         function saveAdminExamSelection() {
             let selectedIds = [];
             document.querySelectorAll('#admin-exam-list input[type="checkbox"]:checked').forEach(cb => selectedIds.push(cb.value));
             localStorage.setItem('custom_exam_indices', JSON.stringify(selectedIds));
             syncToCloud();
             alert("Prüfungs-Auswahl gespeichert!");
+            returnToMenu();
+        }
+
+        function saveAdminLearningSessionSelection() {
+            let selectedIds = [];
+            document.querySelectorAll('#admin-exam-list input[type="checkbox"]:checked').forEach(cb => selectedIds.push(cb.value));
+            localStorage.setItem('custom_learning_session_indices', JSON.stringify(selectedIds));
+            syncToCloud();
+            alert("Lernzeit-Auswahl gespeichert!");
             returnToMenu();
         }
 
@@ -1090,6 +1187,7 @@
                 rally_checkpoint_index: localStorage.getItem('rally_checkpoint_index'),
                 challenge_progress: localStorage.getItem('challenge_progress'),
                 custom_exam_indices: localStorage.getItem('custom_exam_indices'),
+                custom_learning_session_indices: localStorage.getItem('custom_learning_session_indices'),
                 custom_quiz_data: localStorage.getItem('custom_quiz_data'),
                 session_target_correct: localStorage.getItem('session_target_correct'),
                 last_exam_date: localStorage.getItem('last_exam_date')
@@ -1120,6 +1218,7 @@
                 let data = JSON.parse(decodeURIComponent(atob(code)));
                 if (data.total_horseshoes !== undefined) localStorage.setItem('total_horseshoes', data.total_horseshoes);
                 if (data.custom_exam_indices !== undefined) localStorage.setItem('custom_exam_indices', data.custom_exam_indices);
+                if (data.custom_learning_session_indices !== undefined) localStorage.setItem('custom_learning_session_indices', data.custom_learning_session_indices);
                 if (data.custom_quiz_data !== undefined) localStorage.setItem('custom_quiz_data', data.custom_quiz_data);
                 if (data.session_target_correct !== undefined) localStorage.setItem('session_target_correct', data.session_target_correct);
                 if (data.last_exam_date !== undefined) localStorage.setItem('last_exam_date', data.last_exam_date);
@@ -1136,7 +1235,7 @@
             rallyCurrentIndex = savedRallyIndex !== null ? Math.floor(parseInt(savedRallyIndex) / 5) * 5 : 0;
             shuffledRallySteps = [...rallyStepsData];
             shuffledRallySteps.sort(() => Math.random() - 0.5);
-            initLogTable(); initSessionLogTable(); updateChallengeMenuDisplay(); updateHorseshoeDisplay(); renderRewardsListDisplay();
+            initLogTable(); initSessionLogTable(); updateChallengeMenuDisplay(); updateHorseshoeDisplay(); renderRewardsListDisplay(); checkHelpRequestUI();
 
             document.addEventListener("visibilitychange", function() {
                 if (document.hidden && !isJokerActive && !isPromptActive) {
@@ -1405,7 +1504,7 @@
             let logs = JSON.parse(localStorage.getItem('session_logs') || '{}'); let today = new Date().toISOString().split('T')[0];
             const tbody = document.getElementById('session-log-table-body'); if (!tbody) return; tbody.innerHTML = '';
             const dayLogs = logs[today];
-            if (!dayLogs || dayLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-gray-400">Keine Lernzeit heute.</td></tr>`; return; }
+            if (!dayLogs || dayLogs.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-gray-400">Noch keine Lernzeit heute.</td></tr>`; return; }
             dayLogs.forEach(item => {
                 let tr = document.createElement('tr'); tr.className = "border-b border-indigo-100";
                 tr.innerHTML = `<td class="p-2 font-medium">${item.dateTime}</td><td class="p-2">${item.duration}</td><td class="p-2 font-bold">${item.status}</td>`;
@@ -1485,25 +1584,89 @@
                 initSessionLogTable(); 
                 updateChallengeMenuDisplay(); 
                 updateHorseshoeDisplay(); 
+                checkHelpRequestUI();
             }
             window.scrollTo(0, 0);
         }
 
+        function startGlobalSession() {
+            let savedIndices = JSON.parse(localStorage.getItem('custom_learning_session_indices') || '[]');
+            if (savedIndices.length === 0) { 
+                alert("⚠️ Keine Fragen für die Lernzeit ausgewählt! Bitte wähle im Admin-Menü unter 'Lernzeit-Fragen auswählen' die gewünschten Aufgaben aus."); 
+                return; 
+            }
+
+            activeSessionMode = true;
+            isChallengeMode = false; 
+            isTestModeActive = false; 
+            isExamMode = false; 
+            isStrictDirectInputMode = false;
+            isRetryRoundActive = false;
+            hasRetriedOnce = false;
+            
+            sessionSelectedQuestions = [];
+            for (let subj in quizData) {
+                quizData[subj].forEach((q, qIdx) => { 
+                    if (savedIndices.includes(`${subj}_${qIdx}`)) {
+                        sessionSelectedQuestions.push({ ...q, originalSubject: subj, originalIndex: qIdx, isCorrect: false });
+                    }
+                });
+            }
+            
+            sessionSelectedQuestions.sort(() => Math.random() - 0.5);
+            sessionTotalQuestions = sessionSelectedQuestions.length;
+            sessionCorrectCount = 0;
+            currentQuestionIndex = 0;
+
+            sessionStats = { minutes: 0, categories: new Set(["Lernzeit (Auswahl)"]), totalAnswered: 0, totalCorrect: 0 };
+            appendSessionLog("Lernzeit", "Gestartet");
+
+            document.getElementById('quiz-subject-title').innerText = "⏱️ Lernzeit";
+            document.getElementById('challenge-joker-container').classList.add('hidden');
+            document.getElementById('home-timer-display').classList.add('hidden');
+            document.getElementById('quiz-timer-display').classList.add('hidden');
+            
+            showScreen('screen-quiz');
+            loadQuestion();
+        }
+
         function startCustomSession() {
-            isPromptActive = true; setTimeout(() => { isPromptActive = false; }, 1000);
-            let choice = prompt("Wähle deine Lernzeit:\n10-60 Min oder '1' für Test!", "20");
+            isPromptActive = true; 
+            setTimeout(() => { isPromptActive = false; }, 1000);
+            let choice = prompt("Admin-Testmodus:\n10-60 Min Timer oder '1' für Test!", "20");
             if (choice === null) return;
             let minutes = parseInt(choice);
-            if (minutes === 1) startTestSession(1); else if (minutes >= 10 && minutes <= 60) startGlobalSession(minutes);
+            if (minutes === 1) startTestSession(1); 
+            else if (minutes >= 10 && minutes <= 60) startGlobalSessionTimer(minutes);
         }
 
         function startTestSession(minutes) {
-            activeSessionMinutes = minutes; globalTimeLeft = 60; lastActivityTime = Date.now(); isPausedByInactivity = false; isSessionActive = true; isStrictDirectInputMode = false;
+            activeSessionMinutes = minutes; globalTimeLeft = 60; lastActivityTime = Date.now(); isPausedByInactivity = false; isSessionActive = true; isStrictDirectInputMode = false; activeSessionMode = false;
             sessionStats = { minutes: minutes, categories: new Set(), totalAnswered: 0, totalCorrect: 0 };
             appendSessionLog("1 Min (Test)", "Gestartet");
             document.getElementById('home-timer-display').classList.remove('hidden');
             if (globalTimerInterval) clearInterval(globalTimerInterval);
             globalTimerInterval = setInterval(updateGlobalTimer, 1000); updateGlobalTimer();
+            openCategory('Mathe', false);
+        }
+
+        function startGlobalSessionTimer(minutes) {
+            activeSessionMinutes = minutes; 
+            globalTimeLeft = minutes * 60; 
+            lastActivityTime = Date.now(); 
+            isPausedByInactivity = false; 
+            isSessionActive = true; 
+            isStrictDirectInputMode = false;
+            activeSessionMode = false;
+            
+            sessionStats = { minutes: minutes, categories: new Set(), totalAnswered: 0, totalCorrect: 0 };
+            appendSessionLog(`${minutes} Min (Test)`, "Gestartet");
+            
+            document.getElementById('home-timer-display').classList.remove('hidden');
+            if (globalTimerInterval) clearInterval(globalTimerInterval);
+            globalTimerInterval = setInterval(updateGlobalTimer, 1000); 
+            updateGlobalTimer();
+            openCategory('Mathe', false);
         }
 
         function checkInactivity() {
@@ -1515,15 +1678,6 @@
 
         function resumeTimerOnTaskComplete() {
             lastActivityTime = Date.now(); isPausedByInactivity = false; document.getElementById('pause-banner').classList.add('hidden');
-        }
-
-        function startGlobalSession(minutes) {
-            activeSessionMinutes = minutes; globalTimeLeft = minutes * 60; lastActivityTime = Date.now(); isPausedByInactivity = false; isSessionActive = true; isStrictDirectInputMode = false;
-            sessionStats = { minutes: minutes, categories: new Set(), totalAnswered: 0, totalCorrect: 0 };
-            appendSessionLog(`${minutes} Min`, "Gestartet");
-            document.getElementById('home-timer-display').classList.remove('hidden');
-            if (globalTimerInterval) clearInterval(globalTimerInterval);
-            globalTimerInterval = setInterval(updateGlobalTimer, 1000); updateGlobalTimer();
         }
 
         function updateGlobalTimer() {
@@ -1557,6 +1711,28 @@
                 document.getElementById('res-status-badge').innerText = "💪 Ziel nicht erreicht";
                 document.getElementById('res-status-badge').className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-red-100 text-red-800";
                 document.getElementById('not-reached-actions').classList.remove('hidden');
+                
+                let retryBtn = document.getElementById('btn-retry-session');
+                let helpBtn = document.getElementById('btn-request-help');
+                let helpStatus = localStorage.getItem('help_request_status') || 'none';
+
+                retryBtn.classList.remove('hidden');
+                retryBtn.innerText = "🔄 Weitermachen (Falsche Fragen wiederholen)";
+
+                if (hasRetriedOnce || helpStatus === 'pending') {
+                    helpBtn.classList.remove('hidden');
+                    if (helpStatus === 'pending') {
+                        helpBtn.innerText = "⏳ Wartet auf Prüfung...";
+                        helpBtn.className = "w-full bg-gray-400 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm cursor-not-allowed";
+                        helpBtn.disabled = true;
+                    } else {
+                        helpBtn.innerText = "🆘 Bei Admin nach Hilfe fragen";
+                        helpBtn.className = "w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm";
+                        helpBtn.disabled = false;
+                    }
+                } else {
+                    helpBtn.classList.add('hidden');
+                }
             }
         }
 
@@ -1567,8 +1743,104 @@
             document.getElementById('res-status-badge').innerText = "🚫 Verbot gewählt";
         }
 
+        function requestAdminHelp() {
+            localStorage.setItem('help_request_status', 'pending');
+            localStorage.setItem('pending_correct_count', sessionCorrectCount);
+            localStorage.setItem('pending_total_count', sessionTotalQuestions);
+            syncToCloud();
+            let helpBtn = document.getElementById('btn-request-help');
+            if(helpBtn) {
+                helpBtn.innerText = "⏳ Wartet auf Prüfung...";
+                helpBtn.className = "w-full bg-gray-400 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm cursor-not-allowed";
+                helpBtn.disabled = true;
+            }
+            alert("Hilfe-Anfrage wurde gespeichert! Dein Admin prüft es demnächst.");
+            checkHelpRequestUI();
+        }
+
+        function checkHelpRequestUI() {
+            let status = localStorage.getItem('help_request_status') || 'none';
+            let mainHelpBtn = document.getElementById('main-help-btn');
+            let helpBtn = document.getElementById('btn-request-help');
+
+            if (mainHelpBtn) {
+                if (status === 'pending') {
+                    mainHelpBtn.className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs flex items-center justify-center gap-1 animate-pulse border-2 border-yellow-300 cursor-pointer";
+                    mainHelpBtn.innerHTML = "🔔 Offene Hilfe-Anfrage prüfen!";
+                    mainHelpBtn.disabled = false;
+                } else {
+                    mainHelpBtn.className = "w-full bg-gray-200 text-gray-500 font-bold py-2.5 px-4 rounded-xl shadow transition text-xs flex items-center justify-center gap-1 cursor-not-allowed";
+                    mainHelpBtn.innerHTML = "🔔 Keine offene Hilfe-Anfrage";
+                    mainHelpBtn.disabled = true;
+                }
+            }
+
+            if (helpBtn) {
+                if (status === 'pending' || hasRetriedOnce) {
+                    helpBtn.classList.remove('hidden');
+                    if (status === 'pending') {
+                        helpBtn.innerText = "⏳ Wartet auf Prüfung...";
+                        helpBtn.className = "w-full bg-gray-400 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm cursor-not-allowed";
+                        helpBtn.disabled = true;
+                    } else {
+                        helpBtn.innerText = "🆘 Bei Admin nach Hilfe fragen";
+                        helpBtn.className = "w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm";
+                        helpBtn.disabled = false;
+                    }
+                } else {
+                    helpBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        async function checkAdminHelpRequestFromHome() {
+            let status = localStorage.getItem('help_request_status') || 'none';
+            if (status !== 'pending') {
+                alert("Es liegt aktuell keine offene Hilfe-Anfrage vor.");
+                return;
+            }
+
+            let pin = prompt("Admin-PIN eingeben zur Überprüfung der Hilfe-Anfrage:");
+            if (!checkPinWithLockdown(pin, "0307")) return;
+
+            let total = parseInt(localStorage.getItem('pending_total_count') || '4');
+            let correct = parseInt(localStorage.getItem('pending_correct_count') || '0');
+            let incorrect = total - correct;
+
+            let decision = confirm(
+                `📊 OFFENE LERNZEIT-ANFRAGE:\n\n` +
+                `Richtig beantwortet: ${correct} von ${total}\n\n` +
+                `Möchtest du die Lernzeit als ERFÜLLT werten?\n\n` +
+                `[OK] = Ja, erfüllt (+3 🧲 Hufeisen)\n` +
+                `[Abbrechen] = Nein, nicht erfüllt (+1 🧲 Hufeisen / Halbe Belohnung)`
+            );
+
+            if (decision) {
+                totalHorseshoes += 3;
+                localStorage.setItem('total_horseshoes', totalHorseshoes);
+                updateHorseshoeDisplay();
+                appendSessionLog("Lernzeit (Admin-Hilfe)", `Erfüllt gewertet (${correct}/${total}) +3 🧲`);
+                alert("Erfolgreich! 3 Hufeisen wurden gutgeschrieben.");
+            } else {
+                totalHorseshoes += 1;
+                localStorage.setItem('total_horseshoes', totalHorseshoes);
+                updateHorseshoeDisplay();
+                appendSessionLog("Lernzeit (Admin-Hilfe)", `Nicht erfüllt gewertet (${correct}/${total}) +1 🧲`);
+                alert("Halbe Belohnung (1 Hufeisen) wurde gutgeschrieben.");
+            }
+
+            localStorage.setItem('help_request_status', 'none');
+            localStorage.setItem('pending_correct_count', '0');
+            localStorage.setItem('pending_total_count', '0');
+            hasRetriedOnce = false;
+            
+            checkHelpRequestUI();
+            await syncToCloud();
+            showScreen('screen-home');
+        }
+
         function openCategory(subject, isTestMode) {
-            isChallengeMode = false; isTestModeActive = isTestMode; isExamMode = false; currentSubject = subject; currentQuestionIndex = 0;
+            isChallengeMode = false; isTestModeActive = isTestMode; isExamMode = false; activeSessionMode = false; currentSubject = subject; currentQuestionIndex = 0;
             sessionStats.categories.add(subject + (isTestMode ? " (Test)" : " (Lernen)"));
             let allQuestions = [...quizData[subject]]; allQuestions.sort(() => Math.random() - 0.5);
             activeQuestions = isTestMode ? allQuestions.slice(0, 10) : allQuestions;
@@ -1578,46 +1850,76 @@
         }
 
         function loadQuestion() {
-            if (isTestModeActive && currentQuestionIndex >= 10) { showTestResult(); return; }
-            if (isExamMode && currentQuestionIndex >= activeQuestions.length) { showExamResult(); return; }
-            if (isChallengeMode) {
+            if (activeSessionMode) {
+                if (currentQuestionIndex >= sessionSelectedQuestions.length) {
+                    evaluateSessionEnd();
+                    return;
+                }
+            } else if (isTestModeActive && currentQuestionIndex >= 10) { 
+                showTestResult(); 
+                return; 
+            } else if (isExamMode && currentQuestionIndex >= activeQuestions.length) { 
+                showExamResult(); 
+                return; 
+            } else if (isChallengeMode) {
                 if (challengeCorrectCount >= 15) { handleChallengeFinish(true); return; }
                 if (currentQuestionIndex >= 20) { handleChallengeFinish(challengeCorrectCount >= 15); return; }
             } else {
                 if (currentQuestionIndex >= activeQuestions.length) { currentQuestionIndex = 0; activeQuestions.sort(() => Math.random() - 0.5); }
             }
 
-            const currentQ = activeQuestions[currentQuestionIndex];
+            const currentQ = activeSessionMode ? sessionSelectedQuestions[currentQuestionIndex] : activeQuestions[currentQuestionIndex];
             lastActivityTime = Date.now();
-            document.getElementById('question-counter').innerText = isChallengeMode ? `Frage ${currentQuestionIndex + 1} von 20 (Richtige: ${challengeCorrectCount}/15)` : `Frage ${currentQuestionIndex + 1} von ${activeQuestions.length}`;
+            
+            let counterText = activeSessionMode ? 
+                `Aufgabe ${currentQuestionIndex + 1} von ${sessionSelectedQuestions.length}` : 
+                (isChallengeMode ? `Frage ${currentQuestionIndex + 1} von 20 (Richtige: ${challengeCorrectCount}/15)` : `Frage ${currentQuestionIndex + 1} von ${activeQuestions.length}`);
+            
+            document.getElementById('question-counter').innerText = counterText;
 
-            if (!isChallengeMode && !isExamMode && currentQ.hint) {
-                document.getElementById('btn-hint').classList.remove('hidden'); document.getElementById('hint-text').innerText = currentQ.hint;
-            } else document.getElementById('btn-hint').classList.add('hidden');
-
-            const optionsContainer = document.getElementById('options-container'); const directInputContainer = document.getElementById('direct-input-container');
-            const inputField = document.getElementById('quiz-user-input');
-            let isInputType = false; let displayQuestionText = currentQ.question;
-
-            if (currentQ.type === 'input' || currentQ.type === 'error_hunt' || currentSubject === 'Deutsch' || currentSubject === 'Alltag') {
-                if (currentQ.type === 'error_hunt') { isInputType = true; displayQuestionText = `Finde den Fehler im Satz:<br><em>„${currentQ.sentence}“</em>`; inputField.setAttribute('data-target', currentQ.targetWord); } 
-                else if (currentQ.type === 'input' || !currentQ.options) { isInputType = true; displayQuestionText = currentQ.question; inputField.setAttribute('data-target', currentQ.correct); inputField.setAttribute('data-alt', currentQ.alt || ""); }
+            if (!isChallengeMode && !isExamMode && !activeSessionMode && currentQ.hint) {
+                document.getElementById('btn-hint').classList.remove('hidden'); 
+                document.getElementById('hint-text').innerText = currentQ.hint;
             } else {
-                let isTextOrUnitTask = isChallengeMode || isExamMode || currentSubject !== 'Mathe' || currentQ.question.includes("Ein") || currentQ.question.includes("Wie viel") || (currentQ.options && currentQ.options.some(opt => opt.includes("€") || opt.includes("g")));
-                isInputType = isStrictDirectInputMode || !isTextOrUnitTask;
-                if (currentQ.options) inputField.setAttribute('data-target', currentQ.options[currentQ.correct]);
+                document.getElementById('btn-hint').classList.add('hidden');
+            }
+
+            const optionsContainer = document.getElementById('options-container'); 
+            const directInputContainer = document.getElementById('direct-input-container');
+            const inputField = document.getElementById('quiz-user-input');
+            
+            let isInputType = (currentQ.type === 'input' || currentQ.type === 'error_hunt' || !currentQ.options);
+            let displayQuestionText = currentQ.question || currentQ.sentence;
+
+            if (currentQ.type === 'error_hunt') {
+                displayQuestionText = `Finde den Fehler im Satz:<br><em>„${currentQ.sentence}“</em>`;
+                inputField.setAttribute('data-target', currentQ.targetWord);
+            } else if (isInputType) {
+                inputField.setAttribute('data-target', currentQ.correct);
+                inputField.setAttribute('data-alt', currentQ.alt || "");
+            } else {
+                inputField.setAttribute('data-target', currentQ.options[currentQ.correct]);
             }
 
             document.getElementById('question-text').innerHTML = displayQuestionText;
 
             if (isInputType) {
-                optionsContainer.classList.add('hidden'); directInputContainer.classList.remove('hidden'); inputField.value = ''; document.getElementById('quiz-feedback').innerText = '';
+                optionsContainer.classList.add('hidden'); 
+                directInputContainer.classList.remove('hidden'); 
+                inputField.value = ''; 
+                document.getElementById('quiz-feedback').innerText = '';
             } else {
-                directInputContainer.classList.add('hidden'); optionsContainer.classList.remove('hidden'); optionsContainer.innerHTML = '';
-                let shuffledOptions = currentQ.options.map((opt, idx) => ({ text: opt, originalIndex: idx })); shuffledOptions.sort(() => Math.random() - 0.5);
+                directInputContainer.classList.add('hidden'); 
+                optionsContainer.classList.remove('hidden'); 
+                optionsContainer.innerHTML = '';
+                let shuffledOptions = currentQ.options.map((opt, idx) => ({ text: opt, originalIndex: idx })); 
+                shuffledOptions.sort(() => Math.random() - 0.5);
                 shuffledOptions.forEach((item) => {
-                    let btn = document.createElement('button'); btn.className = "w-full bg-white border-2 border-indigo-100 hover:bg-indigo-50 font-semibold py-3 px-4 rounded-xl text-left";
-                    btn.innerText = item.text; btn.onclick = () => selectAnswer(item.originalIndex, currentQ.correct, item.text); optionsContainer.appendChild(btn);
+                    let btn = document.createElement('button'); 
+                    btn.className = "w-full bg-white border-2 border-indigo-100 hover:bg-indigo-50 font-semibold py-3 px-4 rounded-xl text-left";
+                    btn.innerText = item.text; 
+                    btn.onclick = () => selectAnswer(item.originalIndex, currentQ.correct, item.text); 
+                    optionsContainer.appendChild(btn);
                 });
             }
         }
@@ -1626,7 +1928,7 @@
 
         function checkDirectInputAnswer() {
             resumeTimerOnTaskComplete();
-            const currentQ = activeQuestions[currentQuestionIndex];
+            const currentQ = activeSessionMode ? sessionSelectedQuestions[currentQuestionIndex] : activeQuestions[currentQuestionIndex];
             const inputField = document.getElementById('quiz-user-input');
             const userVal = inputField.value.trim();
             const feedbackEl = document.getElementById('quiz-feedback');
@@ -1641,12 +1943,44 @@
             sessionStats.totalAnswered++;
             
             let isCorrect = false;
-            if (currentSubject === 'Deutsch') {
+            let checkSubj = activeSessionMode ? currentQ.originalSubject : currentSubject;
+
+            if (checkSubj === 'Deutsch') {
                 isCorrect = (userVal.toLowerCase() === correctText.toLowerCase());
             } else {
                 let cleanUser = extractCleanNumber(userVal);
                 let cleanCorrect = extractCleanNumber(correctText);
                 isCorrect = (cleanUser === cleanCorrect) || (userVal.toLowerCase() === correctText.toLowerCase());
+            }
+
+            if (activeSessionMode) {
+                if (isCorrect) {
+                    currentQ.isCorrect = true;
+                    sessionCorrectCount++;
+                    sessionStats.totalCorrect++;
+                    appendToLiveLog(currentQ.question || currentQ.sentence, userVal, true);
+                    feedbackEl.innerText = "🎯 Richtig!";
+                    feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
+                } else {
+                    currentQ.isCorrect = false;
+                    appendToLiveLog(currentQ.question || currentQ.sentence, userVal, false);
+                    feedbackEl.innerText = `❌ Falsch! Richtig wäre: ${correctText}`;
+                    feedbackEl.className = "text-center text-sm font-bold mt-2 text-red-600";
+                }
+
+                if (isRetryRoundActive) {
+                    let required = Math.ceil(sessionTotalQuestions * 0.5);
+                    if (sessionCorrectCount >= required) {
+                        setTimeout(evaluateSessionEnd, 800);
+                        return;
+                    }
+                }
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }, 1000);
+                return;
             }
 
             if (isChallengeMode) {
@@ -1695,11 +2029,6 @@
                     feedbackEl.innerText = "🎯 Richtig!";
                     feedbackEl.className = "text-center text-sm font-bold mt-2 text-green-600";
 
-                    if (!isSessionActive && sessionStats.totalCorrect >= getTargetCorrectCount()) {
-                        setTimeout(showSessionFinished, 400);
-                        return;
-                    }
-
                     setTimeout(() => {
                         currentQuestionIndex++;
                         loadQuestion();
@@ -1719,10 +2048,34 @@
 
         function selectAnswer(selectedIndex, correctIndex, selectedText) {
             resumeTimerOnTaskComplete();
-            const currentQ = activeQuestions[currentQuestionIndex];
+            const currentQ = activeSessionMode ? sessionSelectedQuestions[currentQuestionIndex] : activeQuestions[currentQuestionIndex];
             const isCorrect = (selectedIndex === correctIndex);
 
             sessionStats.totalAnswered++;
+
+            if (activeSessionMode) {
+                if (isCorrect) {
+                    currentQ.isCorrect = true;
+                    sessionCorrectCount++;
+                    sessionStats.totalCorrect++;
+                    appendToLiveLog(currentQ.question || currentQ.sentence || "Frage", selectedText, true);
+                } else {
+                    currentQ.isCorrect = false;
+                    appendToLiveLog(currentQ.question || currentQ.sentence || "Frage", selectedText, false);
+                }
+
+                if (isRetryRoundActive) {
+                    let required = Math.ceil(sessionTotalQuestions * 0.5);
+                    if (sessionCorrectCount >= required) {
+                        setTimeout(evaluateSessionEnd, 400);
+                        return;
+                    }
+                }
+
+                currentQuestionIndex++;
+                loadQuestion();
+                return;
+            }
 
             if (isExamMode) {
                 if (isCorrect) sessionStats.totalCorrect++;
@@ -1749,17 +2102,97 @@
                     sessionStats.totalCorrect++;
                     appendToLiveLog(currentQ.question || currentQ.sentence || "Frage", selectedText, true);
                 } else {
+                    sessionStats.totalCorrect = sessionStats.totalCorrect;
                     appendToLiveLog(currentQ.question || currentQ.sentence || "Frage", selectedText, false);
-                }
-
-                if (!isSessionActive && sessionStats.totalCorrect >= getTargetCorrectCount()) {
-                    setTimeout(showSessionFinished, 400);
-                    return;
                 }
 
                 currentQuestionIndex++;
                 loadQuestion();
             }
+        }
+
+        function evaluateSessionEnd() {
+            activeSessionMode = false;
+            let total = sessionTotalQuestions;
+            let required = Math.ceil(total * 0.5);
+
+            if (sessionCorrectCount < required) {
+                showScreen('screen-result');
+                document.getElementById('btn-print-certificate').classList.add('hidden');
+                
+                appendSessionLog("Lernzeit", `Nicht erreicht (${sessionCorrectCount}/${total})`);
+                document.getElementById('res-time').innerText = "Lernzeit";
+                document.getElementById('res-categories').innerText = "Ausgewählte Prüfungsfragen";
+                document.getElementById('res-total').innerText = total;
+                document.getElementById('res-correct').innerText = `${sessionCorrectCount} von ${total} (Mindestens ${required} nötig)`;
+                document.getElementById('res-status-badge').innerText = `💪 Noch nicht geschafft (${sessionCorrectCount} von ${required} nötigen Richtigen)`;
+                document.getElementById('res-status-badge').className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-red-100 text-red-800";
+                
+                document.getElementById('not-reached-actions').classList.remove('hidden');
+                
+                let retryBtn = document.getElementById('btn-retry-session');
+                let helpBtn = document.getElementById('btn-request-help');
+                let helpStatus = localStorage.getItem('help_request_status') || 'none';
+
+                retryBtn.classList.remove('hidden');
+                retryBtn.innerText = "🔄 Weitermachen (Falsche Fragen wiederholen)";
+
+                if (hasRetriedOnce || helpStatus === 'pending') {
+                    helpBtn.classList.remove('hidden');
+                    if (helpStatus === 'pending') {
+                        helpBtn.innerText = "⏳ Wartet auf Prüfung...";
+                        helpBtn.className = "w-full bg-gray-400 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm cursor-not-allowed";
+                        helpBtn.disabled = true;
+                    } else {
+                        helpBtn.innerText = "🆘 Bei Admin nach Hilfe fragen";
+                        helpBtn.className = "w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm";
+                        helpBtn.disabled = false;
+                    }
+                } else {
+                    helpBtn.classList.add('hidden');
+                }
+                return;
+            }
+
+            showScreen('screen-result');
+            document.getElementById('btn-print-certificate').classList.add('hidden');
+            
+            totalHorseshoes += 3; 
+            localStorage.setItem('total_horseshoes', totalHorseshoes); 
+            updateHorseshoeDisplay(); 
+            syncToCloud();
+            
+            appendSessionLog("Lernzeit", `Erfolgreich (${sessionCorrectCount}/${total}) +3 🧲`);
+            document.getElementById('res-time').innerText = "Lernzeit";
+            document.getElementById('res-categories').innerText = "Ausgewählte Prüfungsfragen";
+            document.getElementById('res-total').innerText = total;
+            document.getElementById('res-correct').innerText = `${sessionCorrectCount} von ${total} (Mindestens ${required} nötig)`;
+            document.getElementById('res-status-badge').innerText = `🎯 Lernzeit erreicht! (+3 🧲 Hufeisen)`;
+            document.getElementById('res-status-badge').className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold mb-4 shadow-sm bg-green-100 text-green-800";
+            document.getElementById('not-reached-actions').classList.add('hidden');
+        }
+
+        function continueFailedSession() {
+            hasRetriedOnce = true;
+            let failedQuestions = sessionSelectedQuestions.filter(q => !q.isCorrect);
+            let required = Math.ceil(sessionTotalQuestions * 0.5);
+            
+            if (failedQuestions.length === 0 || sessionCorrectCount >= required) {
+                evaluateSessionEnd();
+                return;
+            }
+
+            failedQuestions.forEach(q => {
+                q.isCorrect = false;
+            });
+
+            activeSessionMode = true;
+            isRetryRoundActive = true; 
+            sessionSelectedQuestions = failedQuestions;
+            currentQuestionIndex = 0;
+
+            showScreen('screen-quiz');
+            loadQuestion();
         }
 
         function showTestResult() {
@@ -1772,7 +2205,7 @@
         function toggleHint() { document.getElementById('hint-box').classList.toggle('hidden'); }
 
         function startPathGame(gameKey) {
-            isChallengeMode = false; isTestModeActive = false; isStrictDirectInputMode = false; currentGameKey = gameKey;
+            isChallengeMode = false; isTestModeActive = false; isStrictDirectInputMode = false; activeSessionMode = false; currentGameKey = gameKey;
             if (gameKey === 'horse') {
                 currentHorseLevel = parseInt(localStorage.getItem('horse_completed_level') || '0');
                 if (currentHorseLevel >= horseLevels.length) currentHorseLevel = 0;
@@ -1876,11 +2309,11 @@
             if (currentGameKey === 'horse') {
                 latestFinishedHorseLevel = currentHorseLevel + 1; currentHorseLevel++; localStorage.setItem('horse_completed_level', currentHorseLevel); syncToCloud();
                 showScreen('screen-result'); document.getElementById('result-title').innerText = `🎉 Level ${latestFinishedHorseLevel} geschafft!`;
-                document.getElementById('btn-print-certificate').classList.remove('hidden');
+                document.getElementById('btn-print-certificate').classList.add('hidden');
             }
         }
 
-        function returnToMenu() { isChallengeMode = false; isTestModeActive = false; isStrictDirectInputMode = false; currentGameKey = ''; showScreen('screen-home'); }
+        function returnToMenu() { isChallengeMode = false; isTestModeActive = false; isStrictDirectInputMode = false; activeSessionMode = false; currentGameKey = ''; showScreen('screen-home'); }
     </script>
 </body>
 </html>
