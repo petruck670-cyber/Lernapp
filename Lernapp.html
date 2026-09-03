@@ -56,7 +56,15 @@
                     if (cloudData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(cloudData.custom_exam_indices));
                     if (cloudData.custom_learning_session_indices) localStorage.setItem('custom_learning_session_indices', JSON.stringify(cloudData.custom_learning_session_indices));
                     if (cloudData.last_exam_date) localStorage.setItem('last_exam_date', cloudData.last_exam_date);
-                    if (cloudData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(cloudData.custom_quiz_data));
+                    
+                    // WICHTIG: Cloud-Fragen haben Vorrang, damit sie nach 48h nicht verloren gehen
+                    if (cloudData.custom_quiz_data) {
+                        localStorage.setItem('custom_quiz_data', JSON.stringify(cloudData.custom_quiz_data));
+                        if (typeof quizData !== 'undefined') {
+                            quizData = cloudData.custom_quiz_data;
+                        }
+                    }
+
                     if (cloudData.session_target_correct !== undefined) localStorage.setItem('session_target_correct', cloudData.session_target_correct);
                     
                     if (cloudData.help_request_status !== undefined) {
@@ -107,7 +115,8 @@
                     pending_correct_count: localStorage.getItem('pending_correct_count') || '0',
                     pending_total_count: localStorage.getItem('pending_total_count') || '0'
                 };
-                await setDoc(docRef, cloudPayload);
+                // MIT MERGE: TRUE SICHERGESTELLT, DASS NICHTS VERLOREN GEHT
+                await setDoc(docRef, cloudPayload, { merge: true });
                 if (statusEl) statusEl.innerText = "⚡ Firebase Live-Sync aktiv";
             } catch (e) { if (statusEl) statusEl.innerText = "❌ Fehler beim Speichern"; }
         };
@@ -127,7 +136,14 @@
                 if (remoteData.custom_exam_indices) localStorage.setItem('custom_exam_indices', JSON.stringify(remoteData.custom_exam_indices));
                 if (remoteData.custom_learning_session_indices) localStorage.setItem('custom_learning_session_indices', JSON.stringify(remoteData.custom_learning_session_indices));
                 if (remoteData.last_exam_date) localStorage.setItem('last_exam_date', remoteData.last_exam_date);
-                if (remoteData.custom_quiz_data) localStorage.setItem('custom_quiz_data', JSON.stringify(remoteData.custom_quiz_data));
+                
+                if (remoteData.custom_quiz_data) {
+                    localStorage.setItem('custom_quiz_data', JSON.stringify(remoteData.custom_quiz_data));
+                    if (typeof quizData !== 'undefined') {
+                        quizData = remoteData.custom_quiz_data;
+                    }
+                }
+
                 if (remoteData.session_target_correct !== undefined) localStorage.setItem('session_target_correct', remoteData.session_target_correct);
                 
                 let localStatus = localStorage.getItem('help_request_status');
@@ -586,7 +602,7 @@
                 { type: "choice", question: "Welche Wortart ist das Wort 'schnell'?", options: ["Nomen", "Verb", "Adjektiv", "Artikel"], correct: 2, hint: "Es beschreibt, wie etwas getan wird (Wiewort)." },
                 { type: "choice", question: "Wie schreibt man die Mehrzahl von 'Fahrrad'?", options: ["Fahrräder", "Fahrrads", "Fahrräders", "Fahrräds"], correct: 0, hint: "Mit Umlaut ä." },
                 { type: "choice", question: "Welcher Satz steht im Präteritum (Vergangenheit)?", options: ["Ich laufe.", "Ich bin gelaufen.", "Ich lief.", "Ich werde laufen."], correct: 2, hint: "Die einfache Vergangenheit." },
-                { type: "choice", question: "Welches Wort wird mit 'ie' geschrieben?", options: ["Flage", "Wiese", "Spal", "Bane"], correct: 1, hint: "Ein langes i in Wiese." },
+                { type: "choice", question: "Welches Word wird mit 'ie' geschrieben?", options: ["Flage", "Wiese", "Spal", "Bane"], correct: 1, hint: "Ein langes i in Wiese." },
                 { type: "choice", question: "Was ist das Gegenteil von 'hell'?", options: ["Dunkel", "Leise", "Weich", "Kalt"], correct: 0, hint: "Wenn kein Licht da ist." },
                 { type: "choice", question: "Was ist ein anderes Wort für 'Nomen'?", options: ["Tunwort", "Wiewort", "Namenwort", "Bindewort"], correct: 2, hint: "Namen von Personen, Tieren oder Sachen." },
                 { type: "choice", question: "Welcher Satz ist Fragesatz?", options: ["Du kommst morgen.", "Kommst du morgen?", "Komm morgen!", "Ich hoffe du kommst."], correct: 1, hint: "Endet mit einem Fragezeichen." },
@@ -719,7 +735,7 @@
                 { question: "Welches Sinnesorgan nutzen wir zum Hören?", options: ["Ohr", "Auge", "Nase", "Haut"], correct: 0, hint: "Nimmt Schallwellen wahr." },
                 { question: "Welche Tiere gehören zu den Amphibien?", options: ["Frösche", "Hunde", "Fische", "Vögel"], correct: 0, hint: "Leben an Land und im Wasser." },
                 { question: "Wie nennt man die Schicht aus Gasen, die die Erde umgibt?", options: ["Atmosphäre", "Lithosphäre", "Hydrosphäre", "Biosphäre"], correct: 0, hint: "Die Lufthülle." },
-                { question: "Какие Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
+                { question: "Welche Farbe hat Sauerstoff im gasförmigen Zustand?", options: ["Farblos", "Blau", "Weiß", "Grün"], correct: 0, hint: "Man kann es mit dem Auge nicht sehen." },
                 { question: "Welcher Monat hat normalerweise die wenigsten Tage?", options: ["Februar", "Januar", "April", "Dezember"], correct: 0, hint: "Hat nur 28 oder 29 Tage." },
                 { question: "Welches ist das leichteste chemische Element im Universum?", options: ["Wasserstoff", "Sauerstoff", "Helium", "Kohlenstoff"], correct: 0, hint: "H." }
             ],
@@ -737,10 +753,10 @@
                 { type: "choice", question: "Welches Organ in unserem Kopf steuert den ganzen Körper?", options: ["Das Herz", "Die Lunge", "Das Gehirn", "Der Magen"], correct: 2, hint: "Unser Denkorgan." },
                 { type: "input", question: "Wie heißt der grünen Farbstoff in Pflanzen, mit dem sie Sonnenlicht tanken? Chloro...", correct: "ophyll", alt: "ophyll", hint: "Chlorophyll." },
                 { type: "choice", question: "Wie viele Zähne hat ein erwachsener Mensch (mit Weisheitszähnen)?", options: ["24", "28", "32", "36"], correct: 2, hint: "Genau 32 Stück." },
-                { type: "input", question: "Какие Farbe hat saubere Luft zum Atmen?", correct: "farblos", alt: "durchsichtig", hint: "Man sieht sie nicht." },
+                { type: "input", question: "Welche Farbe hat saubere Luft zum Atmen?", correct: "farblos", alt: "durchsichtig", hint: "Man sieht sie nicht." },
                 { type: "choice", question: "Was passiert mit Wasser, wenn es sprudelnd kocht?", options: ["Es friert", "Es verdunstet", "Es wird zu Stein", "Es verschwindet für immer"], correct: 1, hint: "Es steigt als Dampf auf." },
                 { type: "input", question: "Wie heißt das größte Organ unseres Körpers, das uns schützt?", correct: "Haut", alt: "haut", hint: "Hüllt uns komplett ein." },
-                { type: "choice", question: "Welcher Nadelbaum in deutschen Wäldern verliert im Herbst seine Nadeln?", options: ["Tanne", "Fichte", "Lärche", "Kiefer"], correct: 2, hint: "Die Lärche." },
+                { type: "choice", question: "Welches Nadelbaum in deutschen Wäldern verliert im Herbst seine Nadeln?", options: ["Tanne", "Fichte", "Lärche", "Kiefer"], correct: 2, hint: "Die Lärche." },
                 { type: "input", question: "Wie viele Hauptkammern hat ein menschliches Herz?", correct: "4", alt: "vier", hint: "Zwei Vorhöfe, zwei Kammern." },
                 { type: "choice", question: "Welches Vitamin bekommen wir durch die Sonne auf der Haut?", options: ["Vitamin A", "Vitamin B", "Vitamin C", "Vitamin D"], correct: 3, hint: "Das Sonnen-Vitamin." },
                 { type: "input", question: "Wie nennt man Tiere, die nachts wach sind und tagsüber schlafen?", correct: "nachtaktiv", alt: "nachtaktiv", hint: "Wie die Eule." },
@@ -752,10 +768,10 @@
                 { type: "input", question: "Wie viele Monate hat ein ganzes Jahr?", correct: "12", alt: "zwölf", hint: "Von Januar bis Dezember." },
                 { type: "choice", question: "Welche Nachbarländer hat Deutschland (die direkt an unsere Grenzen stoßen)?", options: ["5", "7", "9", "11"], correct: 2, hint: "Genau 9 Nachbarn." },
                 { type: "input", question: "Wie heißt die berühmte Hansestadt im Norden Deutschlands mit einem riesigen Hafen?", correct: "Hamburg", alt: "hamburg", hint: "Freie und Hansestadt Hamburg." },
-                { type: "choice", question: "Какие Farben hat die Flagge unseres Bundeslandes (Baden-Württemberg)?", options: ["Schwarz-Rot-Gold", "Schwarz-Gold", "Blau-Weiß", "Rot-Weiß"], correct: 1, hint: "Schwarz-Gold." },
+                { type: "choice", question: "Welche Farben hat die Flagge unseres Bundeslandes (Baden-Württemberg)?", options: ["Schwarz-Rot-Gold", "Schwarz-Gold", "Blau-Weiß", "Rot-Weiß"], correct: 1, hint: "Schwarz-Gold." },
                 { type: "input", question: "Wie heißt das Parlament in Berlin, in dem die deutschen Politiker tagen?", correct: "Bundestag", alt: "bundestag", hint: "Der Bundestag." },
                 { type: "choice", question: "Welches heimische Waldtier hat ein Geweih, das jedes Jahr abfällt und neu wächst?", options: ["Wildschwein", "Hirsch", "Fuchs", "Dachs"], correct: 1, hint: "Der Hirsch." },
-                { type: "input", question: "Какие Farbe hat normale Kuhmilch im Tetra Pak?", correct: "weiß", alt: "weiss", hint: "Die klassische Milchfarbe." },
+                { type: "input", question: "Welche Farbe hat normale Kuhmilch im Tetra Pak?", correct: "weiß", alt: "weiss", hint: "Die klassische Milchfarbe." },
                 { type: "choice", question: "Wie viele Minuten hat eine Stunde?", options: ["30", "45", "60", "100"], correct: 2, hint: "Genau 60 Minuten." },
                 { type: "input", question: "Wie heißt das Werkzeug, mit dem man Nägel in die Wand schlägt?", correct: "Hammer", alt: "hammer", hint: "Ein schwerer Stiel mit Kopf." },
                 { type: "choice", question: "Was braucht man, um ein Bild mit Wasserfarben zu malen?", options: ["Wasserfarben und Pinsel", "Nagellack", "Kleber", "Kreppband"], correct: 0, hint: "Farbe und Pinsel." },
@@ -763,7 +779,7 @@
                 { type: "choice", question: "Wie viele Jahreszeiten hat Deutschland?", options: ["2", "3", "4", "6"], correct: 2, hint: "Frühling, Sommer, Herbst, Winter." },
                 { type: "input", question: "Aus welchem wertvollen gelben Edelmetall werden Ringe hergestellt?", correct: "Gold", alt: "gold", hint: "Glänzt gelb." },
                 { type: "choice", question: "Wie viele Tage hat eine normale Woche?", options: ["5", "6", "7", "10"], correct: 2, hint: "Von Montag bis Sonntag." },
-                { type: "input", question: "Как nennt man Wassertropfen, die morgens auf dem Gras liegen?", correct: "Tau", alt: "tau", hint: "Ein kurzes Wort mit T." },
+                { type: "input", question: "Wie nennt man Wassertropfen, die morgens auf dem Gras liegen?", correct: "Tau", alt: "tau", hint: "Ein kurzes Wort mit T." },
                 { type: "choice", question: "Wer erfindet in Geschichten oft tolle, verrückte Maschinen?", options: ["Koch", "Erfinder", "Gärtner", "Maler"], correct: 1, hint: "Ein Erfinder." },
                 { type: "input", question: "Wie viele Sekunden hat eine Minute?", correct: "60", alt: "sechzig", hint: "Genau 60 Sekunden." },
                 { type: "choice", question: "Was ist das Lieblingsfutter von Eichhörnchen im deutschen Wald?", options: ["Gras", "Nüsse und Eicheln", "Fleisch", "Würmer"], correct: 1, hint: "Knackige Nüsse." },
@@ -780,10 +796,10 @@
                 { type: "input", question: "Wie heißt das Haustier, das vom Wolf abstammt?", correct: "Hund", alt: "hund", hint: "Der beste Freund des Menschen." },
                 { type: "choice", question: "Welches ist das beliebteste Haustier der Deutschen (nach Anzahl in den Haushalten)?", options: ["Hund", "Katze", "Wellensittich", "Goldhamster"], correct: 1, hint: "Die Katze." },
                 { type: "input", question: "Wie viele Tage hat der Monat Februar in einem normalen Jahr?", correct: "28", alt: "achtundzwanzig", hint: "Weniger als alle anderen." },
-                { type: "choice", question: "Какие Telefonnummer wählt man in Deutschland im Notfall für Feuerwehr und Rettungsdienst?", options: ["110", "112", "115", "911"], correct: 1, hint: "Die europaweite 112." },
-                { type: "choice", question: "Какие Farbe hat eine reife, süße Banane?", correct: "gelb", alt: "gelb", hint: "Die Sonnenfarbe." },
+                { type: "choice", question: "Welche Telefonnummer wählt man in Deutschland im Notfall für Feuerwehr und Rettungsdienst?", options: ["110", "112", "115", "911"], correct: 1, hint: "Die europaweite 112." },
+                { type: "choice", question: "Welche Farbe hat eine reife, süße Banane?", options: ["gelb", "gelb", "gelb", "gelb"], correct: 0, hint: "Die Sonnenfarbe." },
                 { type: "choice", question: "Wie viele Himmelsrichtungen gibt es bei 'Nie Ohne Seife Waschen'?", options: ["2", "3", "4", "8"], correct: 2, hint: "Genau 4 Richtungen." },
-                { type: "input", question: "Как nennt man das männliche, erwachsene Pferd?", correct: "Hengst", alt: "hengst", hint: "Männliches Pferd." }
+                { type: "input", question: "Wie nennt man das männliche, erwachsene Pferd?", correct: "Hengst", alt: "hengst", hint: "Männliches Pferd." }
             ]
         };
 
